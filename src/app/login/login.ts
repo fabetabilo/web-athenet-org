@@ -1,4 +1,7 @@
-import { Component } from '@angular/core';
+import { Component, inject } from '@angular/core'
+import { MsalService } from '@azure/msal-angular'
+import { loginRequest } from '../../auth/loginRequest'
+import { isAuthConfigured } from '../../auth/msalConfig'
 
 @Component({
   selector: 'app-login',
@@ -8,11 +11,26 @@ import { Component } from '@angular/core';
   styleUrl: './login.scss',
 })
 export class LoginComponent {
+  // optional: null cuando isAuthConfigured = false (sin GUIDs)
+  private readonly authService = inject(MsalService, { optional: true })
+
+  /** Indica si environment.ts tiene GUIDs reales. Usado en el template. */
+  protected readonly isAuthConfigured = isAuthConfigured
+
   /**
-   * Initiates the Microsoft / Entra ID login flow.
-   * TODO: replace console.log with MSAL loginRedirect() once clientId is configured.
+   * Inicia el flujo OAuth / OIDC redirect hacia Microsoft Entra ID.
+   * El navegador completo se redirige a login.microsoftonline.com.
+   * Al volver, app.ts procesa el redirect y navega por rol.
    */
   loginWithMicrosoft(): void {
-    console.log('Initiating Microsoft Entra ID login...');
+    if (!this.authService) {
+      console.warn(
+        '[Athenet] MSAL no configurado. ' +
+        'Completa src/environments/environment.ts con los GUIDs del App Registration de Entra ID.',
+      )
+      return
+    }
+    // En Angular los Observables NO se ejecutan sin .subscribe()
+    this.authService.loginRedirect(loginRequest).subscribe()
   }
 }
