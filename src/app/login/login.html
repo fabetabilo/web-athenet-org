@@ -1,0 +1,47 @@
+<div class="login-container">
+
+  <!-- ─── Left: Form Panel ─── -->
+  <div class="form-panel">
+    <div class="form-content">
+
+      <div class="logo">
+        <svg width="32" height="32" viewBox="0 0 32 32" fill="none" xmlns="http://www.w3.org/2000/svg"
+          aria-hidden="true">
+          <rect width="32" height="32" rx="8" fill="#2563EB" />
+          <path d="M8 22L16 10L24 22H8Z" fill="white" />
+        </svg>
+        <span class="logo-name">Athenet</span>
+      </div>
+
+      <div class="form-header">
+        <h1>Bienvenido a<br />Athenet</h1>
+        <p>Inicia sesión con tu cuenta corporativa de Microsoft para acceder al sistema.</p>
+      </div>
+
+      <!-- Microsoft SSO Button -->
+      <button id="btn-microsoft-login" class="ms-button" type="button" (click)="loginWithMicrosoft()">
+        <!-- Official Microsoft 4-square logo -->
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 21 21" width="20" height="20" aria-hidden="true">
+          <rect x="0" y="0" width="10" height="10" fill="#f25022" />
+          <rect x="11" y="0" width="10" height="10" fill="#7fba00" />
+          <rect x="0" y="11" width="10" height="10" fill="#00a4ef" />
+          <rect x="11" y="11" width="10" height="10" fill="#ffb900" />
+        </svg>
+        <span>Iniciar sesión con Microsoft</span>
+      </button>
+
+      <p class="footer-note">
+        Solo usuarios autorizados de la organización tienen acceso.
+      </p>
+
+    </div>
+  </div>
+
+  <!-- ─── Right: Image Panel ─── -->
+  <div class="image-panel">
+    <img src="https://images.unsplash.com/photo-1489944440615-453fc2b6a9a9?q=80&w=1323&auto=format&fit=crop"
+      alt="Paisaje Athenet" loading="eager" />
+    <div class="image-overlay"></div>
+  </div>
+
+</div>
