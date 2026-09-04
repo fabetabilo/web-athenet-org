@@ -1,14 +1,15 @@
 import type { RedirectRequest } from '@azure/msal-browser'
+import { environment } from '../environments/environment'
 
 /**
- * Scopes que se solicitan en cada loginRedirect.
+ * Scope propio de la API: `api://{clientId}/access_as_user`
+ * Produce un Access Token con aud = api://{clientId}, scp = access_as_user.
+ * Spring validara ese aud en `audiences` de application.yml.
  *
- * - openid / profile → ID Token (identidad: quién eres)
- * - User.Read        → permiso delegado de Microsoft Graph (futuro uso)
- *
- * Cuando la API Gateway esté lista, agregar aquí el scope de la API:
- *   'api://TU_API_CLIENT_ID/access_as_user'
+ * NOTA: En caso de necesitar Graph y API a la vez, agregar 'User.Read' a este array
  */
+const apiScope = `api://${environment.clientId}/access_as_user`
+
 export const loginRequest: RedirectRequest = {
-  scopes: ['openid', 'profile', 'User.Read'],
+  scopes: ['openid', 'profile', apiScope],
 }

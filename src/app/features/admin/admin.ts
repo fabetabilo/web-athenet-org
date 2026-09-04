@@ -1,38 +1,84 @@
-import { Component, inject } from '@angular/core'
+import { Component, inject, signal } from '@angular/core'
+import { JsonPipe } from '@angular/common'
 import { MsalService } from '@azure/msal-angular'
+import { firstValueFrom } from 'rxjs'
 import { environment } from '../../../environments/environment'
+import { loginRequest } from '../../../auth/loginRequest'
+import {
+  ApiService,
+  type PublicHolaResponse,
+  type PrivateMeResponse,
+} from '../../../api/api.service'
 
 @Component({
   selector: 'app-admin-dashboard',
   standalone: true,
-  imports: [],
-  template: `
-    <div class="dashboard">
-      <div class="dashboard-header">
-        <h1>Panel de Administración</h1>
-        <p>Bienvenido, {{ accountName }}</p>
-        <button class="logout-btn" type="button" (click)="logout()">Cerrar sesión</button>
-      </div>
-      <p class="placeholder-note">
-        🚧 Dashboard de administración — En construcción
-      </p>
-    </div>
-  `,
-  styles: [`
-    .dashboard { padding: 2rem; font-family: Inter, sans-serif; }
-    .dashboard-header { display: flex; align-items: center; gap: 1.5rem; flex-wrap: wrap; margin-bottom: 2rem; }
-    h1 { margin: 0; font-size: 1.5rem; color: #0f172a; }
-    p { margin: 0; color: #64748b; }
-    .logout-btn { margin-left: auto; padding: 0.5rem 1rem; border: 1px solid #e2e8f0; border-radius: 0.375rem; background: #fff; cursor: pointer; font-family: inherit; }
-    .logout-btn:hover { background: #f8fafc; }
-    .placeholder-note { color: #94a3b8; font-size: 0.875rem; }
-  `],
+  imports: [JsonPipe],
+  templateUrl: './admin.html',
+  styleUrl: './admin.scss',
 })
 export class AdminDashboardComponent {
   private readonly authService = inject(MsalService, { optional: true })
-  protected readonly accountName = this.authService?.instance.getActiveAccount()?.name ?? 'Director'
+  private readonly apiService = inject(ApiService)
+
+  protected readonly accountName =
+    this.authService?.instance.getActiveAccount()?.name ?? 'Admin'
+
+  // --- estado API  ---
+  protected readonly loading = signal(false)
+  protected readonly error = signal<string | null>(null)
+  protected readonly publicData = signal<PublicHolaResponse | null>(null)
+  protected readonly privateData = signal<PrivateMeResponse | null>(null)
+  protected readonly apiBaseUrl = this.apiService.getBaseUrl()
 
   logout(): void {
-    this.authService?.logoutRedirect({ postLogoutRedirectUri: environment.redirectUri }).subscribe()
+    this.authService
+      ?.logoutRedirect({ postLogoutRedirectUri: environment.redirectUri })
+      .subscribe()
+  }
+
+  /**
+   * Obtiene el ID Token via acquireTokenSilent y llama a ambos endpoints
+   * en paralelo. acquireTokenSilent() devuelve un >Observable< en MSAL Angular;
+   * firstValueFrom() lo convierte a Promise para poder hacer await.
+   */
+  async probarApi(): Promise<void> {
+    const account =
+      this.authService?.instance.getActiveAccount() ??
+      this.authService?.instance.getAllAccounts()[0]
+
+    if (!this.authService || !account) {
+      this.error.set('No hay sesión activa.')
+      return
+    }
+
+    this.loading.set(true)
+    this.error.set(null)
+    this.publicData.set(null)
+    this.privateData.set(null)
+
+    try {
+      // acquireTokenSilent reutiliza la sesión; no redirige al usuario
+      const tokenResult = await firstValueFrom(
+        this.authService.acquireTokenSilent({ ...loginRequest, account }),
+      )
+
+      // Llamadas en paralelo: pública (sin token) y privada (ID Token)
+      const [pub, priv] = await Promise.all([
+        this.apiService.fetchPublicHola(),
+        this.apiService.fetchPrivateMe(tokenResult.accessToken),  // --> Access Token API
+      ])
+
+      this.publicData.set(pub)
+      this.privateData.set(priv)
+    } catch (err) {
+      this.error.set(
+        err instanceof Error
+          ? err.message
+          : 'No se pudo completar la llamada a la API.',
+      )
+    } finally {
+      this.loading.set(false)
+    }
   }
 }
