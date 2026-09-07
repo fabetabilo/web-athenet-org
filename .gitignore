@@ -42,3 +42,7 @@ __screenshots__/
 # System files
 .DS_Store
 Thumbs.db
+
+# Angular environment local — contiene GUIDs reales de Entra ID, NO versionar
+src/environments/environment.ts
+src/environments/environment.prod.ts

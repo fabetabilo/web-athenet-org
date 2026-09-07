@@ -1,0 +1,203 @@
+// ─── Login Page Styles ───────────────────────────────────────────────────────
+
+:host {
+  display: block;
+  height: 100dvh;
+}
+
+.login-container {
+  display: flex;
+  height: 100dvh;
+  width: 100%;
+  background: #ffffff;
+  overflow: hidden;
+}
+
+// ─── Left Column: Form ───────────────────────────────────────────────────────
+
+.form-panel {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 42%;
+  flex-shrink: 0;
+  padding: 3rem 4rem;
+  background: #ffffff;
+  z-index: 1;
+}
+
+.form-content {
+  width: 100%;
+  max-width: 340px;
+}
+
+// Logo
+.logo {
+  display: flex;
+  align-items: center;
+  gap: 0.625rem;
+  margin-bottom: 3.5rem;
+
+  .logo-name {
+    font-size: 1.25rem;
+    font-weight: 700;
+    color: #0f172a;
+    letter-spacing: -0.02em;
+  }
+}
+
+// Heading block
+.form-header {
+  margin-bottom: 2.75rem;
+
+  h1 {
+    font-size: 2.25rem;
+    font-weight: 700;
+    color: #0f172a;
+    margin: 0 0 1rem;
+    line-height: 1.15;
+    letter-spacing: -0.04em;
+  }
+
+  p {
+    font-size: 0.9375rem;
+    color: #64748b;
+    line-height: 1.65;
+    margin: 0;
+  }
+}
+
+// Microsoft SSO button
+.ms-button {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.75rem;
+  width: 100%;
+  padding: 0.875rem 1.25rem;
+  background: #ffffff;
+  border: 1px solid #d1d5db;
+  border-radius: 0.5rem;
+  font-family: inherit;
+  font-size: 0.9375rem;
+  font-weight: 500;
+  color: #1e293b;
+  cursor: pointer;
+  transition:
+    background 0.18s ease,
+    border-color 0.18s ease,
+    box-shadow 0.18s ease,
+    transform 0.18s ease;
+  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.06);
+
+  svg {
+    flex-shrink: 0;
+  }
+
+  &:hover {
+    background: #f8fafc;
+    border-color: #94a3b8;
+    box-shadow: 0 4px 16px rgba(0, 0, 0, 0.1);
+    transform: translateY(-1px);
+  }
+
+  &:active {
+    transform: translateY(0);
+    box-shadow: 0 1px 2px rgba(0, 0, 0, 0.06);
+  }
+
+  &:focus-visible {
+    outline: 2px solid #2563eb;
+    outline-offset: 2px;
+  }
+}
+
+// Footer note
+.footer-note {
+  margin-top: 1.5rem;
+  font-size: 0.8125rem;
+  color: #94a3b8;
+  text-align: center;
+  line-height: 1.55;
+}
+
+// ─── Right Column: Image ─────────────────────────────────────────────────────
+
+.image-panel {
+  flex: 1;
+  position: relative;
+  // The signature rounded corner — top-left & bottom-left of the image panel
+  border-radius: 2rem 0 0 2rem;
+  overflow: hidden;
+
+  img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    object-position: center;
+    display: block;
+  }
+
+  // Subtle gradient overlay for depth
+  .image-overlay {
+    position: absolute;
+    inset: 0;
+    background: linear-gradient(
+      135deg,
+      rgba(15, 23, 42, 0.15) 0%,
+      rgba(37, 99, 235, 0.08) 100%
+    );
+    pointer-events: none;
+  }
+}
+
+// ─── Responsive: Mobile ──────────────────────────────────────────────────────
+
+@media (max-width: 768px) {
+  .login-container {
+    flex-direction: column;
+  }
+
+  // Image on top, rounded bottom corners
+  .image-panel {
+    order: -1;
+    width: 100%;
+    height: 42vh;
+    border-radius: 0 0 2rem 2rem;
+    flex-shrink: 0;
+  }
+
+  // Form fills remaining space
+  .form-panel {
+    width: 100%;
+    padding: 2rem 1.5rem 2.5rem;
+    flex: 1;
+    align-items: flex-start;
+    padding-top: 2.5rem;
+  }
+
+  .form-content {
+    max-width: 100%;
+  }
+
+  .logo {
+    margin-bottom: 2rem;
+  }
+
+  .form-header {
+    margin-bottom: 2rem;
+
+    h1 {
+      font-size: 1.875rem;
+    }
+  }
+}
+
+// ─── Tablet adjustment ───────────────────────────────────────────────────────
+
+@media (min-width: 769px) and (max-width: 1024px) {
+  .form-panel {
+    width: 50%;
+    padding: 2rem 2.5rem;
+  }
+}
