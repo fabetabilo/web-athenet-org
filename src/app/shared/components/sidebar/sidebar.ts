@@ -1,6 +1,7 @@
 import { Component, input, output, signal } from '@angular/core';
 import { RouterLink, RouterLinkActive } from '@angular/router';
 import { NgClass, TitleCasePipe } from '@angular/common';
+import { MatIconModule } from '@angular/material/icon';
 
 export interface MenuItem {
   label: string;
@@ -11,7 +12,7 @@ export interface MenuItem {
 @Component({
   selector: 'app-sidebar',
   standalone: true,
-  imports: [RouterLink, RouterLinkActive, NgClass, TitleCasePipe],
+  imports: [RouterLink, RouterLinkActive, NgClass, TitleCasePipe, MatIconModule],
   templateUrl: './sidebar.html',
   styleUrl: './sidebar.scss'
 })

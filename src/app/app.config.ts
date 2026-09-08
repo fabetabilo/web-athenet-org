@@ -1,5 +1,6 @@
 import { ApplicationConfig, provideBrowserGlobalErrorListeners } from '@angular/core'
 import { provideRouter } from '@angular/router'
+import { provideAnimationsAsync } from '@angular/platform-browser/animations/async'
 import {
   type IPublicClientApplication,
   PublicClientApplication,
@@ -16,6 +17,7 @@ import { msalConfig } from '../auth/msalConfig'
 const baseProviders = [
   provideBrowserGlobalErrorListeners(),
   provideRouter(routes),
+  provideAnimationsAsync(),
 ]
 
 /** Factory oficial para MSAL standalone (reemplaza MsalModule.forRoot de NgModule) */

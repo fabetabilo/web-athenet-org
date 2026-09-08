@@ -1,0 +1,19 @@
+<div class="layout-wrapper">
+  <app-sidebar
+    [menuItems]="directorMenuItems"
+    [accountName]="accountName"
+    [userRole]="userRole"
+    (logoutClick)="logout()">
+  </app-sidebar>
+
+  <div class="dashboard-content">
+    <div class="dashboard-header">
+      <div class="header-info">
+        <span class="role-badge">Director</span>
+        <h1>Panel de Dirección</h1>
+        <p class="welcome">Bienvenido, {{ accountName }}</p>
+      </div>
+    </div>
+    <p class="placeholder-note">🚧 Dashboard del Director — En construcción</p>
+  </div>
+</div>
