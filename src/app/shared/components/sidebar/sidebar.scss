@@ -1,0 +1,227 @@
+.sidebar {
+  width: var(--sidebar-width);
+  height: 100vh;
+  background-color: var(--sidebar-bg);
+  color: var(--sidebar-text);
+  display: flex;
+  flex-direction: column;
+  transition: width var(--transition-speed) ease;
+  overflow: hidden;
+  box-shadow: 2px 0 10px rgba(0,0,0,0.1);
+  position: relative;
+  z-index: 10;
+
+  &.collapsed {
+    width: var(--sidebar-width-collapsed);
+
+    .logo-text,
+    .user-info,
+    .nav-label {
+      opacity: 0;
+      pointer-events: none;
+      display: none;
+    }
+
+    .sidebar-header {
+      justify-content: center;
+    }
+    
+    .logo-container {
+      display: none;
+    }
+
+    .user-profile {
+      justify-content: center;
+      padding: 1.5rem 0.5rem;
+    }
+  }
+}
+
+.sidebar-header {
+  height: 70px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 0 1.5rem;
+  border-bottom: 1px solid rgba(255,255,255,0.05);
+}
+
+.logo-container {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+}
+
+.logo-icon {
+  width: 32px;
+  height: 32px;
+  background: var(--primary-color);
+  color: white;
+  border-radius: 8px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-weight: 700;
+  font-size: 1.1rem;
+}
+
+.logo-text {
+  font-size: 1.25rem;
+  font-weight: 600;
+  color: var(--sidebar-text-active);
+  letter-spacing: -0.02em;
+}
+
+.toggle-btn {
+  background: transparent;
+  border: none;
+  color: var(--sidebar-text);
+  cursor: pointer;
+  padding: 0.5rem;
+  border-radius: 4px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  
+  &:hover {
+    background: rgba(255,255,255,0.05);
+    color: var(--sidebar-text-active);
+  }
+
+  .material-icon {
+    font-family: monospace;
+    font-size: 1.2rem;
+  }
+}
+
+.user-profile {
+  padding: 1.5rem;
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+  border-bottom: 1px solid rgba(255,255,255,0.05);
+}
+
+.avatar {
+  width: 40px;
+  height: 40px;
+  border-radius: 50%;
+  background: linear-gradient(135deg, var(--primary-color), var(--primary-hover));
+  color: white;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-weight: 600;
+  font-size: 1.2rem;
+  flex-shrink: 0;
+}
+
+.user-info {
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+  white-space: nowrap;
+}
+
+.user-name {
+  color: var(--sidebar-text-active);
+  font-weight: 500;
+  font-size: 0.95rem;
+  text-overflow: ellipsis;
+  overflow: hidden;
+}
+
+.user-role {
+  color: var(--primary-color);
+  font-size: 0.75rem;
+  font-weight: 600;
+  letter-spacing: 0.05em;
+  margin-top: 0.25rem;
+}
+
+.sidebar-nav {
+  flex: 1;
+  padding: 1.5rem 0.75rem;
+  overflow-y: auto;
+  
+  &::-webkit-scrollbar {
+    width: 4px;
+  }
+  &::-webkit-scrollbar-thumb {
+    background: rgba(255,255,255,0.1);
+    border-radius: 4px;
+  }
+}
+
+.nav-list {
+  list-style: none;
+  padding: 0;
+  margin: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+}
+
+.nav-link {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+  padding: 0.75rem 1rem;
+  border-radius: 8px;
+  color: var(--sidebar-text);
+  text-decoration: none;
+  transition: all 0.2s ease;
+  white-space: nowrap;
+
+  &:hover {
+    background: var(--sidebar-hover);
+    color: var(--sidebar-text-active);
+  }
+
+  &.active {
+    background: rgba(79, 70, 229, 0.15); /* primary-color with opacity */
+    color: var(--primary-color);
+    font-weight: 500;
+    
+    .nav-icon-text {
+      color: var(--primary-color);
+    }
+  }
+}
+
+.nav-icon-text {
+  width: 24px;
+  height: 24px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-weight: 600;
+  font-size: 1.1rem;
+  color: var(--sidebar-text);
+  flex-shrink: 0;
+}
+
+.sidebar-footer {
+  padding: 1rem 0.75rem;
+  border-top: 1px solid rgba(255,255,255,0.05);
+}
+
+.logout-btn {
+  width: 100%;
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+  padding: 0.75rem 1rem;
+  border-radius: 8px;
+  background: transparent;
+  border: none;
+  color: #ef4444; /* red-500 */
+  cursor: pointer;
+  transition: all 0.2s ease;
+  font-family: var(--font-family-base);
+  font-size: 1rem;
+
+  &:hover {
+    background: rgba(239, 68, 68, 0.1);
+  }
+}

@@ -1,0 +1,40 @@
+<aside class="sidebar" [ngClass]="{ 'collapsed': isCollapsed() }">
+  <div class="sidebar-header">
+    <div class="logo-container">
+      <div class="logo-icon">A</div>
+      <span class="logo-text">Athenet</span>
+    </div>
+    <button class="toggle-btn" (click)="toggleSidebar()" title="Alternar menú">
+      <span class="material-icon">menu</span>
+    </button>
+  </div>
+
+  <div class="user-profile">
+    <div class="avatar">{{ accountName().charAt(0).toUpperCase() }}</div>
+    <div class="user-info">
+      <span class="user-name">{{ accountName() }}</span>
+      <span class="user-role">{{ userRole() | titlecase }}</span>
+    </div>
+  </div>
+
+  <nav class="sidebar-nav">
+    <ul class="nav-list">
+      @for (item of menuItems(); track item.route) {
+        <li class="nav-item">
+          <a [routerLink]="item.route" routerLinkActive="active" [routerLinkActiveOptions]="{exact: true}" class="nav-link">
+            <!-- Icon placeholders, assuming material icons or similar could be added. Using text fallback for now -->
+            <span class="nav-icon-text">{{ item.label.charAt(0) }}</span>
+            <span class="nav-label">{{ item.label }}</span>
+          </a>
+        </li>
+      }
+    </ul>
+  </nav>
+
+  <div class="sidebar-footer">
+    <button class="logout-btn" (click)="logoutClick.emit()">
+      <span class="nav-icon-text">↪</span>
+      <span class="nav-label">Cerrar sesión</span>
+    </button>
+  </div>
+</aside>

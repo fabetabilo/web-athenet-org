@@ -4,6 +4,7 @@ import { MsalService } from '@azure/msal-angular'
 import { firstValueFrom } from 'rxjs'
 import { environment } from '../../../environments/environment'
 import { loginRequest } from '../../../auth/loginRequest'
+import { SidebarComponent, type MenuItem } from '../../shared/components/sidebar/sidebar'
 import {
   ApiService,
   type PublicHolaResponse,
@@ -13,7 +14,7 @@ import {
 @Component({
   selector: 'app-admin-dashboard',
   standalone: true,
-  imports: [JsonPipe],
+  imports: [JsonPipe, SidebarComponent],
   templateUrl: './admin.html',
   styleUrl: './admin.scss',
 })
@@ -23,6 +24,15 @@ export class AdminDashboardComponent {
 
   protected readonly accountName =
     this.authService?.instance.getActiveAccount()?.name ?? 'Admin'
+
+  protected readonly userRole = 'Admin'
+
+  protected readonly adminMenuItems: MenuItem[] = [
+    { label: 'Dashboard', icon: 'dashboard', route: '/admin' },
+    { label: 'Usuarios', icon: 'group', route: '/admin/users' },
+    { label: 'Reportes', icon: 'bar_chart', route: '/admin/reports' },
+    { label: 'Configuración', icon: 'settings', route: '/admin/settings' },
+  ]
 
   // --- estado API  ---
   protected readonly loading = signal(false)
