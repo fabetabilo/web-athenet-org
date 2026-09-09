@@ -16,7 +16,6 @@
   &.collapsed {
     width: var(--sidebar-width-collapsed);
 
-    .logo-text,
     .user-info,
     .nav-label {
       opacity: 0;
@@ -51,27 +50,13 @@
 .logo-container {
   display: flex;
   align-items: center;
-  gap: var(--space-3);
 }
 
-.logo-icon {
-  width: 32px;
-  height: 32px;
-  background: var(--color-primary);
-  color: var(--color-white);
-  border-radius: var(--radius-lg);
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  font-weight: 700;
-  font-size: 1.1rem;
-}
-
-.logo-text {
-  font-size: 1.25rem;
-  font-weight: 600;
-  color: var(--sidebar-text-active);
-  letter-spacing: -0.02em;
+.logo-img {
+  width: clamp(5rem, 8vw + 3rem, 8rem);
+  height: auto;
+  object-fit: contain;
+  display: block;
 }
 
 .toggle-btn {
@@ -214,13 +199,13 @@
   border-radius: var(--radius-lg);
   background: transparent;
   border: none;
-  color: var(--color-error);
+  color: var(--sidebar-text);
   cursor: pointer;
   transition: all var(--transition-base);
   font-family: var(--font-family-base);
   font-size: 1rem;
 
   &:hover {
-    background: rgba(239, 68, 68, 0.1);
+    background: rgba(68, 205, 239, 0.1);
   }
 }
