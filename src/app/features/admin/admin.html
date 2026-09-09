@@ -1,64 +1,68 @@
-<div class="dashboard">
-
-  <div class="dashboard-header">
-    <div class="header-info">
-      <span class="role-badge">Admin</span>
-      <h1>Panel de Administración</h1>
-      <p class="welcome">Bienvenido, {{ accountName }}</p>
-    </div>
-    <button class="logout-btn" type="button" (click)="logout()">
-      Cerrar sesión
-    </button>
-  </div>
-
-  <!-- integracion de API -->
-  <section class="api-section">
-    <div class="api-header">
-      <h2>Integración con msal-api</h2>
-      <p class="api-url">Base URL: <code>{{ apiBaseUrl }}</code></p>
+<div class="layout-wrapper">
+  <app-sidebar
+    [menuItems]="adminMenuItems"
+    [accountName]="accountName"
+    [userRole]="userRole"
+    (logoutClick)="logout()">
+  </app-sidebar>
+  
+  <div class="dashboard-content">
+    <div class="dashboard-header">
+      <div class="header-info">
+        <span class="role-badge">Admin</span>
+        <h1>Panel de Administración</h1>
+        <p class="welcome">Bienvenido, {{ accountName }}</p>
+      </div>
     </div>
 
-    <p class="api-note">
-      La ruta pública no lleva token. La privada envía el
-      <strong>Access Token</strong> con scope
-      <code>access_as_user</code> — pase correcto para la API.
-    </p>
+    <!-- integracion de API -->
+    <section class="api-section">
+      <div class="api-header">
+        <h2>Integración con msal-api</h2>
+        <p class="api-url">Base URL: <code>{{ apiBaseUrl }}</code></p>
+      </div>
 
-    <button
-      id="btn-probar-api"
-      class="api-btn"
-      type="button"
-      [disabled]="loading()"
-      (click)="probarApi()"
-    >
-      @if (loading()) {
-        <span class="spinner"></span> Consultando API…
-      } @else {
-        Probar API pública y privada
+      <p class="api-note">
+        La ruta pública no lleva token. La privada envía el
+        <strong>Access Token</strong> con scope
+        <code>access_as_user</code> — pase correcto para la API.
+      </p>
+
+      <button
+        id="btn-probar-api"
+        class="api-btn"
+        type="button"
+        [disabled]="loading()"
+        (click)="probarApi()"
+      >
+        @if (loading()) {
+          <span class="spinner"></span> Consultando API…
+        } @else {
+          Probar API pública y privada
+        }
+      </button>
+
+      <!-- Error -->
+      @if (error()) {
+        <div class="api-error">
+          <strong>Error:</strong> {{ error() }}
+        </div>
       }
-    </button>
 
-    <!-- Error -->
-    @if (error()) {
-      <div class="api-error">
-        <strong>Error:</strong> {{ error() }}
-      </div>
-    }
+      <!-- Resultadoss -->
+      @if (publicData()) {
+        <div class="result-block">
+          <h3>GET /public/hola</h3>
+          <pre class="json-box">{{ publicData() | json }}</pre>
+        </div>
+      }
 
-    <!-- Resultadoss -->
-    @if (publicData()) {
-      <div class="result-block">
-        <h3>GET /public/hola</h3>
-        <pre class="json-box">{{ publicData() | json }}</pre>
-      </div>
-    }
-
-    @if (privateData()) {
-      <div class="result-block">
-        <h3>GET /api/me</h3>
-        <pre class="json-box">{{ privateData() | json }}</pre>
-      </div>
-    }
-  </section>
-
+      @if (privateData()) {
+        <div class="result-block">
+          <h3>GET /api/me</h3>
+          <pre class="json-box">{{ privateData() | json }}</pre>
+        </div>
+      }
+    </section>
+  </div>
 </div>

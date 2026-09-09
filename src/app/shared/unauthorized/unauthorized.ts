@@ -24,27 +24,38 @@ import { RouterLink } from '@angular/router'
       align-items: center;
       justify-content: center;
       height: 100dvh;
-      font-family: Inter, sans-serif;
-      background: #f8fafc;
+      font-family: var(--font-family-base);
+      background: var(--color-bg-main);
     }
     .unauth-content {
       text-align: center;
       max-width: 400px;
-      padding: 2rem;
+      padding: var(--space-8);
     }
     .unauth-icon { font-size: 3rem; }
-    h1 { font-size: 1.5rem; color: #0f172a; margin: 1rem 0 0.5rem; }
-    p { color: #64748b; line-height: 1.6; margin: 0 0 1.5rem; }
+    h1 {
+      font-size: 1.5rem;
+      color: var(--color-text-heading);
+      margin: var(--space-4) 0 var(--space-2);
+    }
+    p {
+      color: var(--color-text-muted);
+      line-height: 1.6;
+      margin: 0 0 var(--space-6);
+    }
     .back-link {
       display: inline-block;
-      padding: 0.625rem 1.25rem;
-      border-radius: 0.375rem;
-      background: #0f172a;
-      color: #fff;
+      padding: 0.625rem var(--space-5);
+      border-radius: var(--radius-md);
+      background: var(--color-slate-900);
+      color: var(--color-white);
       text-decoration: none;
       font-size: 0.875rem;
+      transition: background var(--transition-fast);
     }
-    .back-link:hover { background: #1e293b; }
+    .back-link:hover {
+      background: var(--color-slate-800);
+    }
   `],
 })
 export class UnauthorizedComponent {}

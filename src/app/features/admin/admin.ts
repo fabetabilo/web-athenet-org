@@ -4,6 +4,7 @@ import { MsalService } from '@azure/msal-angular'
 import { firstValueFrom } from 'rxjs'
 import { environment } from '../../../environments/environment'
 import { loginRequest } from '../../../auth/loginRequest'
+import { SidebarComponent, type MenuItem } from '../../shared/components/sidebar/sidebar'
 import {
   ApiService,
   type PublicHolaResponse,
@@ -13,7 +14,7 @@ import {
 @Component({
   selector: 'app-admin-dashboard',
   standalone: true,
-  imports: [JsonPipe],
+  imports: [JsonPipe, SidebarComponent],
   templateUrl: './admin.html',
   styleUrl: './admin.scss',
 })
@@ -24,6 +25,15 @@ export class AdminDashboardComponent {
   protected readonly accountName =
     this.authService?.instance.getActiveAccount()?.name ?? 'Admin'
 
+  protected readonly userRole = 'Admin'
+
+  protected readonly adminMenuItems: MenuItem[] = [
+    { label: 'Dashboard', icon: 'dashboard', route: '/admin' },
+    { label: 'Usuarios', icon: 'group', route: '/admin/users' },
+    { label: 'Reportes', icon: 'bar_chart', route: '/admin/reports' },
+    { label: 'Configuración', icon: 'settings', route: '/admin/settings' },
+  ]
+
   // --- estado API  ---
   protected readonly loading = signal(false)
   protected readonly error = signal<string | null>(null)
@@ -32,8 +42,15 @@ export class AdminDashboardComponent {
   protected readonly apiBaseUrl = this.apiService.getBaseUrl()
 
   logout(): void {
+    // Guardar referencia antes de limpiar, para que MSAL sepa qué sesión cerrar
+    const account = this.authService?.instance.getActiveAccount()
+    // Limpiar cuenta activa para evitar estado residual en LocalStorage
+    this.authService?.instance.setActiveAccount(null)
     this.authService
-      ?.logoutRedirect({ postLogoutRedirectUri: environment.redirectUri })
+      ?.logoutRedirect({
+        postLogoutRedirectUri: environment.redirectUri,
+        account: account ?? undefined,
+      })
       .subscribe()
   }
 

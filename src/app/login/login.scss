@@ -9,7 +9,7 @@
   display: flex;
   height: 100dvh;
   width: 100%;
-  background: #ffffff;
+  background: var(--color-bg-surface);
   overflow: hidden;
 }
 
@@ -21,8 +21,8 @@
   justify-content: center;
   width: 42%;
   flex-shrink: 0;
-  padding: 3rem 4rem;
-  background: #ffffff;
+  padding: var(--space-12) 4rem;
+  background: var(--color-bg-surface);
   z-index: 1;
 }
 
@@ -33,16 +33,13 @@
 
 // Logo
 .logo {
-  display: flex;
-  align-items: center;
-  gap: 0.625rem;
   margin-bottom: 3.5rem;
 
-  .logo-name {
-    font-size: 1.25rem;
-    font-weight: 700;
-    color: #0f172a;
-    letter-spacing: -0.02em;
+.logo-img {
+  width: clamp(10rem, 15vw + 3rem, 20rem);
+  height: auto;
+  object-fit: contain;
+  display: block;
   }
 }
 
@@ -53,15 +50,15 @@
   h1 {
     font-size: 2.25rem;
     font-weight: 700;
-    color: #0f172a;
-    margin: 0 0 1rem;
+    color: var(--color-text-heading);
+    margin: 0 0 var(--space-4);
     line-height: 1.15;
     letter-spacing: -0.04em;
   }
 
   p {
     font-size: 0.9375rem;
-    color: #64748b;
+    color: var(--color-text-muted);
     line-height: 1.65;
     margin: 0;
   }
@@ -72,51 +69,51 @@
   display: flex;
   align-items: center;
   justify-content: center;
-  gap: 0.75rem;
+  gap: var(--space-3);
   width: 100%;
-  padding: 0.875rem 1.25rem;
-  background: #ffffff;
-  border: 1px solid #d1d5db;
-  border-radius: 0.5rem;
+  padding: 0.875rem var(--space-5);
+  background: var(--color-bg-surface);
+  border: 1px solid var(--color-slate-300);
+  border-radius: var(--radius-lg);
   font-family: inherit;
   font-size: 0.9375rem;
   font-weight: 500;
-  color: #1e293b;
+  color: var(--color-slate-800);
   cursor: pointer;
   transition:
-    background 0.18s ease,
-    border-color 0.18s ease,
-    box-shadow 0.18s ease,
-    transform 0.18s ease;
-  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.06);
+    background var(--transition-fast),
+    border-color var(--transition-fast),
+    box-shadow var(--transition-fast),
+    transform var(--transition-fast);
+  box-shadow: var(--shadow-xs);
 
   svg {
     flex-shrink: 0;
   }
 
   &:hover {
-    background: #f8fafc;
-    border-color: #94a3b8;
-    box-shadow: 0 4px 16px rgba(0, 0, 0, 0.1);
+    background: var(--color-slate-50);
+    border-color: var(--color-slate-400);
+    box-shadow: var(--shadow-lg);
     transform: translateY(-1px);
   }
 
   &:active {
     transform: translateY(0);
-    box-shadow: 0 1px 2px rgba(0, 0, 0, 0.06);
+    box-shadow: var(--shadow-xs);
   }
 
   &:focus-visible {
-    outline: 2px solid #2563eb;
+    outline: 2px solid var(--color-info);
     outline-offset: 2px;
   }
 }
 
 // Footer note
 .footer-note {
-  margin-top: 1.5rem;
+  margin-top: var(--space-6);
   font-size: 0.8125rem;
-  color: #94a3b8;
+  color: var(--color-text-subtle);
   text-align: center;
   line-height: 1.55;
 }
@@ -126,7 +123,6 @@
 .image-panel {
   flex: 1;
   position: relative;
-  // The signature rounded corner — top-left & bottom-left of the image panel
   border-radius: 2rem 0 0 2rem;
   overflow: hidden;
 
@@ -158,7 +154,6 @@
     flex-direction: column;
   }
 
-  // Image on top, rounded bottom corners
   .image-panel {
     order: -1;
     width: 100%;
@@ -167,13 +162,12 @@
     flex-shrink: 0;
   }
 
-  // Form fills remaining space
   .form-panel {
     width: 100%;
-    padding: 2rem 1.5rem 2.5rem;
+    padding: var(--space-8) var(--space-6) var(--space-10);
     flex: 1;
     align-items: flex-start;
-    padding-top: 2.5rem;
+    padding-top: var(--space-10);
   }
 
   .form-content {
@@ -181,11 +175,11 @@
   }
 
   .logo {
-    margin-bottom: 2rem;
+    margin-bottom: var(--space-8);
   }
 
   .form-header {
-    margin-bottom: 2rem;
+    margin-bottom: var(--space-8);
 
     h1 {
       font-size: 1.875rem;
@@ -198,6 +192,6 @@
 @media (min-width: 769px) and (max-width: 1024px) {
   .form-panel {
     width: 50%;
-    padding: 2rem 2.5rem;
+    padding: var(--space-8) var(--space-10);
   }
 }

@@ -1,0 +1,19 @@
+// reset global para compatibilidad visual entre diferentes navegadores
+
+*,
+*::before,
+*::after {
+  box-sizing: border-box;
+}
+
+html,
+body {
+  margin: 0;
+  padding: 0;
+  height: 100%;
+  font-family: var(--font-family-base);
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+  background: var(--color-bg-main);
+  color: var(--color-text-body);
+}

@@ -23,15 +23,9 @@ export class App implements OnInit {
     if (!this.authService || !this.msalBroadcast) return
 
     /**
-     * OBLIGATORIO en apps standalone con redirect flow.
-     * Procesa el regreso desde login.microsoftonline.com e inicializa MSAL.
-     * Sin esto, la sesión "no entra" después del redirect.
-     */
-    this.authService.handleRedirectObservable().subscribe()
-
-    /**
-     * Esperar InteractionStatus.None antes de leer cuentas evita el error
-     * interaction_in_progress (MSAL aún procesando el redirect).
+     * Cuando MSAL termina cualquier interacción (login/logout/redirect),
+     * evaluamos si hay cuenta activa y navegamos al dashboard correspondiente.
+     * El redirect ya fue procesado por el APP_INITIALIZER en app.config.ts.
      */
     this.msalBroadcast.inProgress$
       .pipe(
@@ -46,10 +40,11 @@ export class App implements OnInit {
           this.authService!.instance.setActiveAccount(accounts[0])
         }
 
-        // Solo navegar si hay sesión y el usuario está en /login o /
+        // Solo navegar si hay cuenta activa y el usuario está en /login o /
+        const activeAccount = this.authService!.instance.getActiveAccount()
         const currentUrl = this.router.url
         const onAuthRoute = currentUrl === '/login' || currentUrl === '/'
-        if (accounts.length > 0 && onAuthRoute) {
+        if (activeAccount && onAuthRoute) {
           this.navigateByRole()
         }
       })
