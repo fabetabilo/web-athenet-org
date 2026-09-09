@@ -42,8 +42,15 @@ export class AdminDashboardComponent {
   protected readonly apiBaseUrl = this.apiService.getBaseUrl()
 
   logout(): void {
+    // Guardar referencia antes de limpiar, para que MSAL sepa qué sesión cerrar
+    const account = this.authService?.instance.getActiveAccount()
+    // Limpiar cuenta activa para evitar estado residual en LocalStorage
+    this.authService?.instance.setActiveAccount(null)
     this.authService
-      ?.logoutRedirect({ postLogoutRedirectUri: environment.redirectUri })
+      ?.logoutRedirect({
+        postLogoutRedirectUri: environment.redirectUri,
+        account: account ?? undefined,
+      })
       .subscribe()
   }
 

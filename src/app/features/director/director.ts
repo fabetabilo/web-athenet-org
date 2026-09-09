@@ -25,6 +25,13 @@ export class DirectorComponent {
   ]
 
   logout(): void {
-    this.authService?.logoutRedirect({ postLogoutRedirectUri: environment.redirectUri }).subscribe()
+    // Guardar referencia antes de limpiar, para que MSAL sepa qué sesión cerrar
+    const account = this.authService?.instance.getActiveAccount()
+    // Limpiar cuenta activa para evitar estado residual en LocalStorage
+    this.authService?.instance.setActiveAccount(null)
+    this.authService?.logoutRedirect({
+      postLogoutRedirectUri: environment.redirectUri,
+      account: account ?? undefined,
+    }).subscribe()
   }
 }
