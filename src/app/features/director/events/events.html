@@ -24,6 +24,8 @@
     [columns]="columns"
     [data]="events()"
     [loading]="loading()"
+    [clickableRows]="true"
+    (rowClick)="onRowClick($event)"
     emptyMessage="No hay eventos institucionales registrados"
   >
     <!-- 1. ID -->

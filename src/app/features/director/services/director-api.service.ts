@@ -1,6 +1,6 @@
 import { Injectable, inject } from '@angular/core';
 import { HttpClient } from '@angular/common/http';
-import { Observable, map } from 'rxjs';
+import { Observable, map, delay } from 'rxjs';
 import { environment } from '../../../../environments/environment';
 
 export interface AthenetEvent {
@@ -66,15 +66,16 @@ export class DirectorApiService {
     return this.http
       .get<any[]>(`${this.eventsApiUrl}/api/public/events`)
       .pipe(
+        delay(7000), // <---- jejejeje
         map((response) => {
           // Soporte para array plano o respuesta envuelta (data / content)
           const items = Array.isArray(response)
             ? response
             : Array.isArray((response as any)?.content)
-            ? (response as any).content
-            : Array.isArray((response as any)?.data)
-            ? (response as any).data
-            : [];
+              ? (response as any).content
+              : Array.isArray((response as any)?.data)
+                ? (response as any).data
+                : [];
 
           return items.map(normalizeAthenetEvent);
         }),

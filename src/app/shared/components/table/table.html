@@ -15,7 +15,11 @@
       [style.min-width]="minWidth()"
     >
       @for (col of columns(); track col.key) {
-        <ng-container [matColumnDef]="col.key">
+        <ng-container
+          [matColumnDef]="col.key"
+          [sticky]="col.sticky ?? false"
+          [stickyEnd]="col.stickyEnd ?? false"
+        >
           <!-- Header -->
           <th
             mat-header-cell
@@ -25,6 +29,8 @@
             [style.width]="col.width"
             [class.text-center]="col.align === 'center'"
             [class.text-right]="col.align === 'right'"
+            [class.sticky-col]="col.sticky"
+            [class.sticky-end-col]="col.stickyEnd"
           >
             <div
               class="header-cell-content"
@@ -117,6 +123,8 @@
             *matCellDef="let row"
             [class.text-center]="col.align === 'center'"
             [class.text-right]="col.align === 'right'"
+            [class.sticky-col]="col.sticky"
+            [class.sticky-end-col]="col.stickyEnd"
           >
             @if (getTemplate(col.key); as customTemplate) {
               <ng-container
@@ -130,7 +138,13 @@
       }
 
       <tr mat-header-row *matHeaderRowDef="displayedColumns"></tr>
-      <tr mat-row *matRowDef="let row; columns: displayedColumns;" class="app-table-row"></tr>
+      <tr
+        mat-row
+        *matRowDef="let row; columns: displayedColumns;"
+        class="app-table-row"
+        [class.clickable-row]="clickableRows()"
+        (click)="onRowClick(row, $event)"
+      ></tr>
 
       <!-- Fila de Estado Vacío o Carga integrada con matNoDataRow -->
       <tr class="mat-row no-data-row" *matNoDataRow [class.loading-row]="loading()">

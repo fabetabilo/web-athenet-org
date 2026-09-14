@@ -26,14 +26,28 @@ interface TestItem {
       [data]="data()"
       [loading]="loading()"
       [emptyMessage]="emptyMessage()"
+      [clickableRows]="clickableRows()"
+      (rowClick)="onRowClick($event)"
     >
       <ng-template tableCell="customCell" let-row>
         <span class="custom-badge">{{ row.name }} - custom</span>
+        <button type="button" class="test-action-btn" (click)="onActionClick($event, row)">Acción</button>
       </ng-template>
     </app-table>
   `,
 })
 class HostTableComponent {
+  clickableRows = signal<boolean>(false);
+  clickedRow: TestItem | null = null;
+  actionRow: TestItem | null = null;
+
+  onRowClick(item: TestItem): void {
+    this.clickedRow = item;
+  }
+
+  onActionClick(event: Event, item: TestItem): void {
+    this.actionRow = item;
+  }
   columns: TableColumn<TestItem>[] = [
     { key: 'id', header: 'ID', sortable: true, width: '80px' },
     { key: 'name', header: 'Nombre', sortable: true, filterable: true, filterType: 'text' },
@@ -247,6 +261,54 @@ describe('TableComponent', () => {
       fixture.detectChanges();
       expect(tableComponent.isFilterActive('name')).toBe(false);
       expect(tableComponent['dataSource'].filteredData.length).toBe(3);
+    });
+  });
+
+  describe('Interacción y Clic en Filas (rowClick)', () => {
+    beforeEach(() => {
+      host.data.set(mockData);
+      fixture.detectChanges();
+    });
+
+    it('no debe emitir rowClick ni tener clase clickable-row si clickableRows = false', () => {
+      host.clickableRows.set(false);
+      fixture.detectChanges();
+
+      const firstRow: HTMLElement = fixture.nativeElement.querySelector('.app-table-row');
+      expect(firstRow.classList.contains('clickable-row')).toBe(false);
+
+      firstRow.click();
+      fixture.detectChanges();
+      expect(host.clickedRow).toBeNull();
+    });
+
+    it('debe tener clase clickable-row y emitir rowClick al hacer clic en la fila cuando clickableRows = true', () => {
+      host.clickableRows.set(true);
+      fixture.detectChanges();
+
+      const firstRow: HTMLElement = fixture.nativeElement.querySelector('.app-table-row');
+      expect(firstRow.classList.contains('clickable-row')).toBe(true);
+
+      firstRow.click();
+      fixture.detectChanges();
+      expect(host.clickedRow).not.toBeNull();
+      expect(host.clickedRow?.id).toBe('EVT-1');
+    });
+
+    it('no debe emitir rowClick si el clic se originó en un botón dentro de la fila (evita colisión con acciones)', () => {
+      host.clickableRows.set(true);
+      fixture.detectChanges();
+
+      const actionBtn: HTMLButtonElement = fixture.nativeElement.querySelector('.test-action-btn');
+      expect(actionBtn).not.toBeNull();
+
+      actionBtn.click();
+      fixture.detectChanges();
+
+      // Debe ejecutarse la acción del botón pero NO la de la fila
+      expect(host.actionRow).not.toBeNull();
+      expect(host.actionRow?.id).toBe('EVT-1');
+      expect(host.clickedRow).toBeNull();
     });
   });
 });

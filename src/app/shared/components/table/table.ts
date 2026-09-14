@@ -8,6 +8,7 @@ import {
   ViewChild,
   effect,
   input,
+  output,
   signal,
 } from '@angular/core';
 import { CommonModule } from '@angular/common';
@@ -27,6 +28,8 @@ export interface TableColumn<T = any> {
   filterOptions?: { label: string; value: any }[];
   width?: string;
   align?: 'left' | 'center' | 'right';
+  sticky?: boolean;
+  stickyEnd?: boolean;
 }
 
 @Directive({
@@ -95,6 +98,24 @@ export class TableComponent<T = any> {
 
   /** Función de tracking personalizada para optimizar el DOM en actualizaciones de API */
   readonly trackBy = input<(index: number, item: T) => any>();
+
+  /** Activa el cursor pointer y la interactividad en las filas */
+  readonly clickableRows = input<boolean>(false);
+
+  /** Emite el objeto de la fila cuando el usuario hace clic en ella */
+  readonly rowClick = output<T>();
+
+  /** Maneja el clic en la fila protegiendo clics en botones de acción o elementos interactivos */
+  onRowClick(row: T, event: MouseEvent): void {
+    if (!this.clickableRows()) return;
+
+    const target = event.target as HTMLElement;
+    if (target?.closest?.('button, a, input, [mat-menu-item], .action-btn')) {
+      return;
+    }
+
+    this.rowClick.emit(row);
+  }
 
   @ContentChildren(TableCellDirective)
   protected cellDirectives!: QueryList<TableCellDirective>;

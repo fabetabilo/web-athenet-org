@@ -112,6 +112,7 @@ export class DirectorEventsComponent implements OnInit {
       header: 'Acciones',
       width: '100px',
       align: 'center',
+      stickyEnd: true,
     },
   ];
 
@@ -180,6 +181,10 @@ export class DirectorEventsComponent implements OnInit {
       default:
         return 'neutral';
     }
+  }
+
+  onRowClick(event: AthenetEvent): void {
+    console.log('Ver detalle del evento:', event);
   }
 
   onEdit(event: AthenetEvent): void {
