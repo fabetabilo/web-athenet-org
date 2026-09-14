@@ -1,0 +1,104 @@
+<div class="events-page">
+  <div class="dashboard-header">
+    <div class="header-info">
+      <span class="role-badge">Director</span>
+      <h1>Eventos</h1>
+      <p class="welcome">Gestión y programación de eventos institucionales</p>
+    </div>
+  </div>
+
+  @if (error()) {
+    <div class="error-banner">
+      <div class="error-content">
+        <mat-icon class="error-icon">error_outline</mat-icon>
+        <span class="error-text">{{ error() }}</span>
+      </div>
+      <button type="button" class="retry-btn" (click)="loadEvents()">
+        <mat-icon class="retry-icon">refresh</mat-icon>
+        Reintentar
+      </button>
+    </div>
+  }
+
+  <app-table
+    [columns]="columns"
+    [data]="events()"
+    [loading]="loading()"
+    [clickableRows]="true"
+    (rowClick)="onRowClick($event)"
+    emptyMessage="No hay eventos institucionales registrados"
+  >
+    <!-- 1. ID -->
+    <ng-template tableCell="internalId" let-row>
+      <span class="event-id">{{ row.internalId }}</span>
+    </ng-template>
+
+    <!-- 2. Título -->
+    <ng-template tableCell="title" let-row>
+      <span class="event-title">{{ row.title }}</span>
+    </ng-template>
+
+    <!-- 3. Categoría -->
+    <ng-template tableCell="category" let-row>
+      <app-pill variant="neutral">{{ getCategoryLabel(row.category) }}</app-pill>
+    </ng-template>
+
+    <!-- 4. Fecha -->
+    <ng-template tableCell="eventDate" let-row>
+      <span class="date-cell">
+        <mat-icon class="inline-icon">calendar_today</mat-icon>
+        {{ row.eventDate | date:'dd/MM/yyyy' }}
+      </span>
+    </ng-template>
+
+    <!-- 5. Estado -->
+    <ng-template tableCell="status" let-row>
+      <app-pill [variant]="getStatusVariant(row.status)" [dot]="true">
+        {{ getStatusLabel(row.status) }}
+      </app-pill>
+    </ng-template>
+
+    <!-- 6. Oficial -->
+    <ng-template tableCell="isOfficial" let-row>
+      @if (row.isOfficial) {
+        <app-pill variant="info" icon="verified">Oficial</app-pill>
+      } @else {
+        <app-pill variant="neutral">Comunitario</app-pill>
+      }
+    </ng-template>
+
+    <!-- 7. Ubicación -->
+    <ng-template tableCell="location" let-row>
+      <span class="location-cell">
+        <mat-icon class="inline-icon">location_on</mat-icon>
+        {{ row.location }}
+      </span>
+    </ng-template>
+
+    <!-- 8. Acciones -->
+    <ng-template tableCell="actions" let-row>
+      <div class="actions-group">
+        <button
+          mat-icon-button
+          class="action-btn edit-btn"
+          type="button"
+          (click)="onEdit(row)"
+          title="Editar evento"
+          aria-label="Editar evento"
+        >
+          <mat-icon>edit</mat-icon>
+        </button>
+        <button
+          mat-icon-button
+          class="action-btn delete-btn"
+          type="button"
+          (click)="onDelete(row)"
+          title="Eliminar evento"
+          aria-label="Eliminar evento"
+        >
+          <mat-icon>delete</mat-icon>
+        </button>
+      </div>
+    </ng-template>
+  </app-table>
+</div>

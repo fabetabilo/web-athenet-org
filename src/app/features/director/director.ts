@@ -1,12 +1,13 @@
 import { Component, inject } from '@angular/core'
 import { MsalService } from '@azure/msal-angular'
+import { RouterOutlet } from '@angular/router'
 import { environment } from '../../../environments/environment'
 import { SidebarComponent, type MenuItem } from '../../shared/components/sidebar/sidebar'
 
 @Component({
   selector: 'app-director',
   standalone: true,
-  imports: [SidebarComponent],
+  imports: [SidebarComponent, RouterOutlet],
   templateUrl: './director.html',
   styleUrl: './director.scss',
 })
@@ -20,6 +21,7 @@ export class DirectorComponent {
 
   protected readonly directorMenuItems: MenuItem[] = [
     { label: 'Panel de Control', icon: 'dashboard', route: '/director' },
+    { label: 'Eventos', icon: 'analytics', route: '/director/events' },
     { label: 'Estadísticas', icon: 'analytics', route: '/director/stats' },
     { label: 'Aprobaciones', icon: 'fact_check', route: '/director/approvals' },
   ]
