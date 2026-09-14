@@ -40,6 +40,128 @@
   width: fit-content;
 }
 
+// ── Table Filter Menus (CDK Overlay) ──
+.table-filter-menu .mat-mdc-menu-panel {
+  overflow: hidden;
+  border-radius: var(--radius-lg);
+  border: 1px solid var(--color-border);
+  box-shadow: var(--shadow-lg);
+}
+
+.filter-panel {
+  padding: var(--space-3);
+  min-width: 190px;
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2);
+  font-family: var(--font-family-base);
+}
+
+.filter-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--space-2);
+  padding-bottom: var(--space-1);
+  border-bottom: 1px solid var(--color-border);
+}
+
+.filter-title {
+  font-size: 0.75rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  color: var(--color-text-heading);
+  letter-spacing: 0.03em;
+}
+
+.filter-clear-btn {
+  background: none;
+  border: none;
+  font-size: 0.75rem;
+  font-weight: 600;
+  color: var(--color-primary);
+  cursor: pointer;
+  padding: 0;
+
+  &:hover {
+    text-decoration: underline;
+  }
+}
+
+.filter-select-options {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  max-height: 200px;
+  overflow-y: auto;
+}
+
+.filter-option-item {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+  padding: 6px 8px;
+  border: none;
+  background: transparent;
+  border-radius: var(--radius-sm);
+  font-size: 0.8125rem;
+  color: var(--color-text-body);
+  cursor: pointer;
+  text-align: left;
+  transition: background var(--transition-fast);
+
+  &:hover {
+    background: var(--color-slate-100);
+  }
+
+  &.selected {
+    font-weight: 600;
+    color: var(--color-primary);
+    background: rgba(0, 200, 255, 0.08);
+  }
+}
+
+.option-check {
+  width: 14px;
+  height: 14px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+
+  mat-icon {
+    font-size: 14px;
+    width: 14px;
+    height: 14px;
+    color: var(--color-primary);
+  }
+}
+
+.filter-input-wrapper {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+  padding: 4px 8px;
+  background: var(--color-slate-100);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-sm);
+
+  .search-icon {
+    font-size: 16px;
+    width: 16px;
+    height: 16px;
+    color: var(--color-text-muted);
+  }
+
+  .filter-search-input {
+    border: none;
+    background: transparent;
+    font-size: 0.8125rem;
+    color: var(--color-text-body);
+    outline: none;
+    width: 100%;
+  }
+}
+
 // ── Responsive ──
 @media (max-width: 600px) {
   .dashboard-content {

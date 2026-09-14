@@ -1,21 +1,26 @@
 # Componente: `<app-table>` (TableComponent)
 
-Tabla de datos generica y componible basada en Angular Material (`MatTableModule`, `MatSortModule`, `MatMenuModule`) y tokens CSS de Athenet.
+Tabla de datos genérica, componible y resiliente ante APIs asíncronas basada en Angular Material (`MatTableModule`, `MatSortModule`, `MatMenuModule`) y tokens CSS de Athenet. Diseñada para ser **100% agnóstica a roles** y consumible de manera universal por cualquier módulo actual o futuro.
 
 ---
 
-## Caracteristicas
+## Características
 
-* **Configuracion tipada:** Definicion de columnas mediante `TableColumn<T>[]`.
-* **Ordenamiento:** Integracion con `MatSort` (`sortable: true`).
-* **Filtros en cabecera:** Menus desplegables (`mat-menu`) con busqueda por texto o seleccion de opciones.
-* **Proyeccion de celdas:** Renderizado personalizado mediante directiva `[tableCell]`. Fallback automatico a texto plano.
-* **Layout responsivo:** Scroll horizontal automatico con `minWidth` configurable.
-* **Estado vacio:** Fila informativa automatica cuando no hay coincidencias con los filtros activos.
+* **Configuración tipada:** Definición de columnas mediante `TableColumn<T>[]`.
+* **Propiedades anidadas:** Soporte nativo para notación de punto (`key: 'categoria.nombre'`) en celdas por defecto, ordenamiento y filtrado.
+* **Ordenamiento:** Integración con `MatSort` (`sortable: true`) con soporte para cadenas, números, fechas y booleanos.
+* **Filtros en cabecera:** Menús desplegables (`mat-menu`) con búsqueda por texto (tolerante a tildes y mayúsculas) o selección de opciones fijas o auto-deducidas.
+* **Proyección de celdas:** Renderizado personalizado mediante directiva `[tableCell]`. Fallback automático a texto plano.
+* **Estado de Carga (`loading`):** Barra de progreso indeterminada y spinner de carga sin parpadeos de estados vacíos falsos.
+* **Estados Vacíos Diferenciados:**
+  * Colección vacía de la API: muestra icono `folder_open` y mensaje configurable (`emptyMessage`).
+  * Sin resultados por filtros activos: muestra icono `search_off` y botón directo para limpiar todos los filtros.
+* **Rendimiento (`trackBy`):** Soporta función de tracking para optimizar el DOM en actualizaciones y recargas de la API.
+* **Layout responsivo:** Scroll horizontal automático con `minWidth` configurable.
 
 ---
 
-## Importacion
+## Importación
 
 ```typescript
 import {
@@ -39,14 +44,14 @@ export class EjemploComponent {}
 
 ```typescript
 export interface TableColumn<T = any> {
-  key: string;                                     // Propiedad del objeto de datos
+  key: string;                                     // Propiedad del objeto (soporta rutas como 'autor.nombre')
   header: string;                                  // Etiqueta del encabezado
   sortable?: boolean;                              // Habilita mat-sort (default: false)
-  filterable?: boolean;                            // Habilita menu de filtro (default: false)
-  filterType?: 'text' | 'select';                  // Tipo de filtro (default: 'text')
-  filterOptions?: { label: string; value: any }[]; // Opciones fijas para filterType='select'
+  filterable?: boolean;                            // Habilita menú de filtro (default: false)
+  filterType?: 'text' | 'select';                  // Tipo de filtro: 'text' o 'select' (default: 'text')
+  filterOptions?: { label: string; value: any }[]; // Opciones fijas para filterType='select' (auto si no se provee)
   width?: string;                                  // Ancho CSS sugerido (ej. '120px')
-  align?: 'left' | 'center' | 'right';             // Alineacion (default: 'left')
+  align?: 'left' | 'center' | 'right';             // Alineación (default: 'left')
 }
 ```
 
@@ -54,19 +59,22 @@ export interface TableColumn<T = any> {
 
 ## Inputs de `<app-table>`
 
-| Input | Tipo | Requerido | Default | Descripcion |
+| Input | Tipo | Requerido | Default | Descripción |
 | :--- | :--- | :--- | :--- | :--- |
-| `columns` | `TableColumn<T>[]` | Si | - | Definicion de columnas. |
-| `data` | `T[]` | Si | - | Coleccion de datos a renderizar. |
-| `minWidth` | `string` | No | `'960px'` | Ancho minimo de la tabla para scroll horizontal. |
+| `columns` | `TableColumn<T>[]` | Sí | - | Definición de columnas. |
+| `data` | `T[]` | Sí | - | Colección de datos a renderizar (seguro ante `null` o `undefined`). |
+| `loading` | `boolean` | No | `false` | Activa la barra e indicador de carga de API. |
+| `emptyMessage` | `string` | No | `'No hay registros disponibles'` | Mensaje cuando la API devuelve 0 elementos. |
+| `trackBy` | `(index: number, item: T) => any` | No | `item.id \| item.internalId \| index` | Función de tracking para mat-row. |
+| `minWidth` | `string` | No | `'960px'` | Ancho mínimo de la tabla para scroll horizontal responsivo. |
 
 ---
 
-## Ejemplo de Implementacion
+## Ejemplo de Implementación con API Asíncrona
 
-### TypeScript
+### TypeScript (`component.ts`)
 ```typescript
-import { Component } from '@angular/core';
+import { Component, OnInit, inject, signal } from '@angular/core';
 import {
   TableComponent,
   TableCellDirective,
@@ -74,59 +82,104 @@ import {
 } from '../../../shared/components/table/table';
 import { PillComponent } from '../../../shared/components/pill/pill';
 
-interface Item {
+interface Evento {
   id: string;
-  nombre: string;
-  estado: 'ACTIVO' | 'INACTIVO';
+  titulo: string;
+  categoria: { id: string; nombre: string };
+  esOficial: boolean;
+  estado: 'PUBLICADO' | 'BORRADOR';
 }
 
 @Component({
-  selector: 'app-items',
+  selector: 'app-eventos',
   standalone: true,
   imports: [TableComponent, TableCellDirective, PillComponent],
-  templateUrl: './items.html',
+  templateUrl: './eventos.html',
 })
-export class ItemsComponent {
-  protected readonly columns: TableColumn<Item>[] = [
+export class EventosComponent implements OnInit {
+  protected readonly columns: TableColumn<Evento>[] = [
     { key: 'id', header: 'ID', sortable: true, width: '90px' },
-    { key: 'nombre', header: 'Nombre', sortable: true, filterable: true, filterType: 'text' },
+    { key: 'titulo', header: 'Título', sortable: true, filterable: true, filterType: 'text' },
     {
-      key: 'estado',
-      header: 'Estado',
+      key: 'categoria.nombre', // Propiedad anidada
+      header: 'Categoría',
+      sortable: true,
+      filterable: true,
+      filterType: 'select',
+      width: '160px',
+    },
+    {
+      key: 'esOficial',
+      header: 'Oficial',
       sortable: true,
       filterable: true,
       filterType: 'select',
       filterOptions: [
-        { label: 'Activo', value: 'ACTIVO' },
-        { label: 'Inactivo', value: 'INACTIVO' },
+        { label: 'Oficial', value: true },
+        { label: 'Comunitario', value: false },
       ],
       width: '130px',
     },
+    { key: 'estado', header: 'Estado', sortable: true, width: '130px' },
     { key: 'acciones', header: 'Acciones', width: '100px', align: 'center' },
   ];
 
-  protected readonly data: Item[] = [
-    { id: 'ITM-1', nombre: 'Item 1', estado: 'ACTIVO' },
-    { id: 'ITM-2', nombre: 'Item 2', estado: 'INACTIVO' },
-  ];
+  // Estado reactivo para consumo de API
+  protected readonly eventos = signal<Evento[]>([]);
+  protected readonly cargando = signal<boolean>(true);
 
-  onEdit(row: Item): void {}
-  onDelete(row: Item): void {}
+  ngOnInit(): void {
+    this.cargarEventosDesdeApi();
+  }
+
+  private cargarEventosDesdeApi(): void {
+    this.cargando.set(true);
+    // Simulación de llamada HTTP (ej. this.eventoService.getAll())
+    setTimeout(() => {
+      this.eventos.set([
+        {
+          id: 'EVT-1',
+          titulo: 'Campeonato Universitario',
+          categoria: { id: 'c1', nombre: 'Fútbol' },
+          esOficial: true,
+          estado: 'PUBLICADO',
+        },
+      ]);
+      this.cargando.set(false);
+    }, 800);
+  }
+
+  onEdit(row: Evento): void {}
+  onDelete(row: Evento): void {}
 }
 ```
 
-### HTML
+### HTML (`component.html`)
 ```html
-<app-table [columns]="columns" [data]="data" minWidth="720px">
-
-  <!-- Columna personalizada: Estado con píldora -->
+<app-table
+  [columns]="columns"
+  [data]="eventos()"
+  [loading]="cargando()"
+  emptyMessage="No se han registrado eventos institucionales aún"
+  minWidth="800px"
+>
+  <!-- Columna personalizada: Píldora de Estado -->
   <ng-template tableCell="estado" let-row>
-    <app-pill [variant]="row.estado === 'ACTIVO' ? 'success' : 'danger'" [dot]="true">
+    <app-pill [variant]="row.estado === 'PUBLICADO' ? 'success' : 'warning'" [dot]="true">
       {{ row.estado }}
     </app-pill>
   </ng-template>
 
-  <!-- Columna personalizada: Botones de accion -->
+  <!-- Columna personalizada: Píldora con icono para Oficial -->
+  <ng-template tableCell="esOficial" let-row>
+    @if (row.esOficial) {
+      <app-pill variant="info" icon="verified">Oficial</app-pill>
+    } @else {
+      <app-pill variant="neutral">Comunitario</app-pill>
+    }
+  </ng-template>
+
+  <!-- Columna personalizada: Botones de acción -->
   <ng-template tableCell="acciones" let-row>
     <div class="actions-group">
       <button mat-icon-button class="action-btn edit-btn" (click)="onEdit(row)" title="Editar">
@@ -137,7 +190,6 @@ export class ItemsComponent {
       </button>
     </div>
   </ng-template>
-
 </app-table>
 ```
 
@@ -145,4 +197,4 @@ export class ItemsComponent {
 
 ## Estilos y Mantenimiento
 
-`TableComponent` encapsula la estructura de la tarjeta, cabeceras, bordes, estados de hover y menus desplegables. El SCSS del componente consumidor unicamente debe declarar los estilos de los elementos proyectados (ej. `.actions-group`, `.action-btn`), consumiendo variables de tokens (`var(--action-btn-edit)`, `var(--color-error)`).
+`TableComponent` encapsula la estructura de la tarjeta, cabeceras, bordes, estados de hover, barra de carga y menús desplegables. El SCSS del componente consumidor únicamente debe declarar los estilos de los elementos proyectados (ej. `.actions-group`, `.action-btn`), consumiendo variables de tokens (`var(--action-btn-edit)`, `var(--color-error)`).

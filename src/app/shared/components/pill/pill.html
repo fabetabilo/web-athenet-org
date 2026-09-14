@@ -1,4 +1,4 @@
-<span class="pill-container" [ngClass]="['variant-' + variant(), 'size-' + size()]">
+<span class="pill-container" [ngClass]="['variant-' + safeVariant, 'size-' + (size() || 'sm')]">
   @if (dot()) {
     <span class="pill-dot"></span>
   }

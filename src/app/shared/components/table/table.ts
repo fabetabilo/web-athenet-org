@@ -38,6 +38,30 @@ export class TableCellDirective {
   constructor(public readonly templateRef: TemplateRef<any>) {}
 }
 
+/**
+ * Resuelve de forma segura propiedades anidadas usando notación de punto (ej. 'category.name').
+ */
+export function getDeepValue(obj: any, path: string): any {
+  if (obj === null || obj === undefined || !path) return undefined;
+  if (!path.includes('.')) return obj[path];
+  return path
+    .split('.')
+    .reduce((acc, part) => (acc !== null && acc !== undefined ? acc[part] : undefined), obj);
+}
+
+/**
+ * Normaliza cadenas removiendo tildes/acentos y convirtiendo a minúsculas
+ * para búsquedas tolerantes e intuitivas en español.
+ */
+export function normalizeFilterText(value: any): string {
+  if (value === null || value === undefined) return '';
+  return String(value)
+    .normalize('NFD')
+    .replace(/[\u0300-\u036f]/g, '')
+    .toLowerCase()
+    .trim();
+}
+
 @Component({
   selector: 'app-table',
   standalone: true,
@@ -54,9 +78,23 @@ export class TableCellDirective {
   styleUrl: './table.scss',
 })
 export class TableComponent<T = any> {
+  /** Definición de columnas de la tabla */
   readonly columns = input.required<TableColumn<T>[]>();
+
+  /** Colección de datos a renderizar (resistente a null/undefined durante llamadas a API) */
   readonly data = input.required<T[]>();
+
+  /** Ancho mínimo para habilitar scroll horizontal responsivo */
   readonly minWidth = input<string>('960px');
+
+  /** Indica si la petición de datos está en progreso */
+  readonly loading = input<boolean>(false);
+
+  /** Mensaje informativo cuando la colección de datos de la API está vacía */
+  readonly emptyMessage = input<string>('No hay registros disponibles');
+
+  /** Función de tracking personalizada para optimizar el DOM en actualizaciones de API */
+  readonly trackBy = input<(index: number, item: T) => any>();
 
   @ContentChildren(TableCellDirective)
   protected cellDirectives!: QueryList<TableCellDirective>;
@@ -71,6 +109,17 @@ export class TableComponent<T = any> {
   }
 
   constructor() {
+    // Acceso robusto a datos para ordenamiento con soporte para rutas anidadas, fechas y booleanos
+    this.dataSource.sortingDataAccessor = (data: T, sortHeaderId: string): string | number => {
+      const value = getDeepValue(data, sortHeaderId);
+      if (value === null || value === undefined) return '';
+      if (typeof value === 'boolean') return value ? 1 : 0;
+      if (typeof value === 'number') return value;
+      if (value instanceof Date) return value.getTime();
+      return String(value).toLowerCase();
+    };
+
+    // Predicado multicriterio con normalización de acentos y soporte de tipos booleanos/numéricos
     this.dataSource.filterPredicate = (row: any, filterJson: string) => {
       if (!filterJson) return true;
       try {
@@ -83,7 +132,7 @@ export class TableComponent<T = any> {
           if (filterVal === undefined || filterVal === null || filterVal === '') {
             continue;
           }
-          const cellVal = row[key];
+          const cellVal = getDeepValue(row, key);
           if (cellVal === undefined || cellVal === null) {
             return false;
           }
@@ -94,7 +143,9 @@ export class TableComponent<T = any> {
               return false;
             }
           } else {
-            if (!String(cellVal).toLowerCase().includes(String(filterVal).toLowerCase())) {
+            const normCell = normalizeFilterText(cellVal);
+            const normFilter = normalizeFilterText(filterVal);
+            if (!normCell.includes(normFilter)) {
               return false;
             }
           }
@@ -105,13 +156,33 @@ export class TableComponent<T = any> {
       }
     };
 
+    // Sincronización reactiva con los datos del input, protegiendo contra null/undefined
     effect(() => {
-      this.dataSource.data = this.data();
+      const incoming = this.data();
+      this.dataSource.data = Array.isArray(incoming) ? incoming : [];
     });
   }
 
+  /** Función de tracking para mat-row */
+  rowTrackBy = (index: number, item: T): any => {
+    const custom = this.trackBy();
+    if (custom) return custom(index, item);
+    return (item as any)?.id ?? (item as any)?.internalId ?? (item as any)?._id ?? index;
+  };
+
   get displayedColumns(): string[] {
     return this.columns().map(c => c.key);
+  }
+
+  get hasActiveFilters(): boolean {
+    const f = this.filterValues();
+    return Object.keys(f).some(
+      k => f[k] !== undefined && f[k] !== null && f[k] !== '' && f[k] !== 'ALL',
+    );
+  }
+
+  getCellValue(row: any, key: string): any {
+    return getDeepValue(row, key) ?? '';
   }
 
   getTemplate(columnKey: string): TemplateRef<any> | null {
@@ -123,9 +194,13 @@ export class TableComponent<T = any> {
     if (col.filterOptions && col.filterOptions.length > 0) {
       return col.filterOptions;
     }
-    const rawData = this.data() ?? [];
+    const rawData = this.data();
+    if (!Array.isArray(rawData) || rawData.length === 0) {
+      return [];
+    }
+
     const uniqueValues = Array.from(
-      new Set(rawData.map((row: any) => row[col.key])),
+      new Set(rawData.map((row: any) => getDeepValue(row, col.key))),
     ).filter(v => v !== undefined && v !== null && v !== '');
 
     return uniqueValues.map(val => ({
@@ -151,6 +226,11 @@ export class TableComponent<T = any> {
     delete nextFilters[colKey];
     this.filterValues.set(nextFilters);
     this.dataSource.filter = JSON.stringify(nextFilters);
+  }
+
+  clearAllFilters(): void {
+    this.filterValues.set({});
+    this.dataSource.filter = '';
   }
 
   isFilterActive(colKey: string): boolean {
