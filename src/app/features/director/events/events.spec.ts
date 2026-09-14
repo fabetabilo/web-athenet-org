@@ -106,4 +106,15 @@ describe('DirectorEventsComponent', () => {
     expect(component.getStatusVariant('CANCELLED')).toBe('danger');
     expect(component.getStatusVariant('UNKNOWN')).toBe('neutral');
   });
+
+  it('debe renderizar el botón "+ Nuevo Evento" y responder al click', () => {
+    fixture.detectChanges();
+    const newEventBtn = fixture.nativeElement.querySelector('app-button');
+    expect(newEventBtn).toBeTruthy();
+    expect(newEventBtn.textContent).toContain('Nuevo Evento');
+
+    const onCreateSpy = vi.spyOn(component, 'onCreateEvent');
+    newEventBtn.click();
+    expect(onCreateSpy).toHaveBeenCalledTimes(1);
+  });
 });

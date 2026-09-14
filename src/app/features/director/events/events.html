@@ -20,6 +20,10 @@
     </div>
   }
 
+  <div class="table-toolbar">
+    <app-button variant="primary" icon="add" (click)="onCreateEvent()">Nuevo Evento</app-button>
+  </div>
+
   <app-table
     [columns]="columns"
     [data]="events()"

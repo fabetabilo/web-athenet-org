@@ -54,6 +54,28 @@
   width: fit-content;
 }
 
+// ── Table Toolbar & Actions ──
+.table-toolbar {
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  gap: var(--space-3);
+  width: 100%;
+
+  .toolbar-left {
+    display: flex;
+    align-items: center;
+    gap: var(--space-3);
+    margin-right: auto;
+  }
+
+  .toolbar-actions {
+    display: flex;
+    align-items: center;
+    gap: var(--space-3);
+  }
+}
+
 // ── Table Filter Menus (CDK Overlay) ──
 .table-filter-menu .mat-mdc-menu-panel {
   overflow: hidden;

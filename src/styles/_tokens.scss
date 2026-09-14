@@ -89,7 +89,7 @@
   // ── Table Tokens ──
   --table-header-bg:        var(--color-slate-200);
   --table-header-text:      var(--color-slate-900);
-  --table-row-hover:        var(--color-slate-50);
+  --table-row-hover:        var(--color-slate-100);
 
   // ── Pill / Badge Tokens ──
   --pill-success-bg:   #ecfdf5;
@@ -118,4 +118,26 @@
   --action-btn-edit-hover:      var(--color-primary);
   --action-btn-delete:          var(--color-slate-400);
   --action-btn-delete-hover:    var(--color-error);
+
+  // ── Button Component Tokens (<app-button>) ──
+  --btn-primary-bg: var(--color-primary);
+  --btn-primary-text: #080B14;
+  --btn-primary-hover-bg: var(--color-primary-hover);
+  --btn-primary-active-bg: #0084aa;
+
+  --btn-danger-bg: var(--color-error);
+  --btn-danger-text: var(--color-white);
+  --btn-danger-hover-bg: #dc2626;
+  --btn-danger-active-bg: #b91c1c;
+
+  --btn-secondary-bg: var(--color-white);
+  --btn-secondary-border: var(--color-border);
+  --btn-secondary-text: var(--color-slate-700);
+  --btn-secondary-hover-bg: var(--color-slate-100);
+  --btn-secondary-hover-text: var(--color-slate-900);
+  --btn-secondary-hover-border: var(--color-slate-300);
+
+  --btn-ghost-text: var(--color-slate-600);
+  --btn-ghost-hover-bg: var(--color-slate-100);
+  --btn-ghost-hover-text: var(--color-slate-900);
 }
