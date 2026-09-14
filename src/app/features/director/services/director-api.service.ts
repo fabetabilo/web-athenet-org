@@ -1,10 +1,13 @@
 import { Injectable, inject } from '@angular/core';
-import { HttpClient } from '@angular/common/http';
-import { Observable, map, delay } from 'rxjs';
+import { HttpClient, HttpHeaders } from '@angular/common/http';
+import { Observable, map, delay, switchMap } from 'rxjs';
+import { MsalService } from '@azure/msal-angular';
 import { environment } from '../../../../environments/environment';
+import { loginRequest } from '../../../../auth/loginRequest';
 
 export interface AthenetEvent {
   internalId: string;
+  id?: number | string;
   title: string;
   category: string;
   eventDate: string;
@@ -35,7 +38,8 @@ export function normalizeAthenetEvent(raw: any): AthenetEvent {
   }
 
   return {
-    internalId: String(raw.internalId ?? raw.internal_id ?? ''),
+    internalId: String(raw.internalId ?? raw.internal_id ?? raw.id ?? ''),
+    id: raw.id ?? raw.internalId ?? raw.internal_id,
     title: String(raw.title ?? ''),
     category: String(raw.category ?? ''),
     eventDate: String(raw.eventDate ?? raw.event_date ?? ''),
@@ -52,6 +56,7 @@ export function normalizeAthenetEvent(raw: any): AthenetEvent {
 @Injectable({ providedIn: 'root' })
 export class DirectorApiService {
   private readonly http = inject(HttpClient);
+  private readonly authService = inject(MsalService, { optional: true });
   private readonly eventsApiUrl = (environment.eventsApiUrl ?? 'http://localhost:8080').replace(/\/+$/, '');
 
   getEventsApiUrl(): string {
@@ -80,5 +85,35 @@ export class DirectorApiService {
           return items.map(normalizeAthenetEvent);
         }),
       );
+  }
+
+  /**
+   * Elimina un evento institucional en el backend.
+   * Endpoint protegido: DELETE /api/admin/events/{id}
+   * Si MSAL está configurado, adquiere silenciosamente el ID Token y lo envía como Bearer.
+   */
+  deleteEvent(id: string | number): Observable<void> {
+    const account =
+      this.authService?.instance.getActiveAccount() ??
+      this.authService?.instance.getAllAccounts()[0];
+
+    if (this.authService && account) {
+      if (!this.authService.instance.getActiveAccount()) {
+        this.authService.instance.setActiveAccount(account);
+      }
+
+      return this.authService.acquireTokenSilent({ ...loginRequest, account }).pipe(
+        switchMap((tokenResult) => {
+          // Se envía estrictamente el ID Token (tokenResult.idToken)
+          const token = tokenResult.idToken;
+          const headers = new HttpHeaders({
+            Authorization: `Bearer ${token}`,
+          });
+          return this.http.delete<void>(`${this.eventsApiUrl}/api/admin/events/${id}`, { headers });
+        }),
+      );
+    }
+
+    return this.http.delete<void>(`${this.eventsApiUrl}/api/admin/events/${id}`);
   }
 }

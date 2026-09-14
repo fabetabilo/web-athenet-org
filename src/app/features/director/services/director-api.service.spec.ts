@@ -147,4 +147,39 @@ describe('DirectorApiService', () => {
       expect(errorOccurred).toBe(true);
     });
   });
+
+  describe('deleteEvent', () => {
+    it('debe realizar petición DELETE a /api/admin/events/:id con status 204 No Content', () => {
+      let completed = false;
+
+      service.deleteEvent('EVT-100').subscribe(() => {
+        completed = true;
+      });
+
+      const req = httpTesting.expectOne(`${eventsApiUrl}/api/admin/events/EVT-100`);
+      expect(req.request.method).toBe('DELETE');
+      req.flush(null, { status: 204, statusText: 'No Content' });
+
+      expect(completed).toBe(true);
+    });
+
+    it('debe propagar errores HTTP si la eliminación falla (ej. 404 o 403)', () => {
+      let errorStatus = 0;
+
+      service.deleteEvent('EVT-999').subscribe({
+        next: () => {
+          throw new Error('No debería tener éxito');
+        },
+        error: (err) => {
+          errorStatus = err.status;
+        },
+      });
+
+      const req = httpTesting.expectOne(`${eventsApiUrl}/api/admin/events/EVT-999`);
+      expect(req.request.method).toBe('DELETE');
+      req.flush('No encontrado', { status: 404, statusText: 'Not Found' });
+
+      expect(errorStatus).toBe(404);
+    });
+  });
 });

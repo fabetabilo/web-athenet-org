@@ -2,6 +2,7 @@ import { Component, OnInit, inject, signal } from '@angular/core';
 import { CommonModule, DatePipe } from '@angular/common';
 import { MatIconModule } from '@angular/material/icon';
 import { MatButtonModule } from '@angular/material/button';
+import { MatDialog } from '@angular/material/dialog';
 import {
   TableComponent,
   TableCellDirective,
@@ -12,6 +13,7 @@ import {
   type PillVariant,
 } from '../../../shared/components/pill/pill';
 import { ButtonComponent } from '../../../shared/components/button/button';
+import { ConfirmDialogComponent } from '../../../shared/components/confirm-dialog/confirm-dialog';
 import {
   DirectorApiService,
   type AthenetEvent,
@@ -35,6 +37,7 @@ import {
 })
 export class DirectorEventsComponent implements OnInit {
   private readonly directorApi = inject(DirectorApiService);
+  private readonly dialog = inject(MatDialog);
 
   protected readonly columns: TableColumn<AthenetEvent>[] = [
     {
@@ -194,7 +197,43 @@ export class DirectorEventsComponent implements OnInit {
   }
 
   onDelete(event: AthenetEvent): void {
-    console.log('Eliminar evento:', event);
+    const dialogRef = this.dialog.open(ConfirmDialogComponent, {
+      data: {
+        title: 'Confirmación de Eliminación',
+        message: 'Estás a punto de eliminar el evento',
+        targetName: event.title,
+        description: 'Esta acción no se puede deshacer y removerá permanentemente el registro.',
+        confirmText: 'Eliminar',
+        confirmVariant: 'danger',
+        confirmIcon: 'delete',
+        cancelText: 'Cancelar',
+        variant: 'danger',
+        icon: 'delete_outline',
+      },
+      width: '460px',
+      maxWidth: '92vw',
+      panelClass: 'athenet-dialog-panel',
+    });
+
+    dialogRef.afterClosed().subscribe((confirmed: boolean) => {
+      if (!confirmed) return;
+
+      const eventId = event.id ?? event.internalId;
+      this.loading.set(true);
+      this.directorApi.deleteEvent(eventId).subscribe({
+        next: () => {
+          this.events.update((prev) => prev.filter((e) => (e.id ?? e.internalId) !== eventId));
+          this.loading.set(false);
+        },
+        error: (err) => {
+          console.error('Error al eliminar evento:', err);
+          this.error.set(
+            `No se pudo eliminar el evento "${event.title}". Por favor, intenta nuevamente.`,
+          );
+          this.loading.set(false);
+        },
+      });
+    });
   }
 
   onCreateEvent(): void {
