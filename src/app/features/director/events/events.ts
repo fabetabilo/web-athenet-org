@@ -1,4 +1,4 @@
-import { Component } from '@angular/core';
+import { Component, OnInit, inject, signal } from '@angular/core';
 import { CommonModule, DatePipe } from '@angular/common';
 import { MatIconModule } from '@angular/material/icon';
 import { MatButtonModule } from '@angular/material/button';
@@ -11,54 +11,10 @@ import {
   PillComponent,
   type PillVariant,
 } from '../../../shared/components/pill/pill';
-
-export interface AthenetEvent {
-  internalId: string;
-  title: string;
-  category: string;
-  eventDate: string;
-  status: 'PUBLISHED' | 'DRAFT' | 'CANCELLED';
-  isOfficial: boolean;
-  location: string;
-  description?: string;
-  address?: string;
-}
-
-const SAMPLE_EVENTS: AthenetEvent[] = [
-  {
-    internalId: 'EVT-1',
-    title: 'Campeonato Sudamericano',
-    category: 'TENIS_MESA',
-    eventDate: '2026-09-24',
-    status: 'PUBLISHED',
-    isOfficial: true,
-    location: 'Santiago, Chile',
-    description: 'Campeonato Sudamericano de Tenis de Mesa universitario.',
-    address: 'Av. Libertador Bernardo O Higgins 340, Santiago Centro',
-  },
-  {
-    internalId: 'EVT-6',
-    title: 'Copa Interfacultades Femenino',
-    category: 'FUTBOL',
-    eventDate: '2026-10-04',
-    status: 'PUBLISHED',
-    isOfficial: false,
-    location: 'Concepción, Chile',
-    description: 'Copa de fútbol femenino entre facultades universitarias.',
-    address: 'Barrio Universitario s/n, Concepción',
-  },
-  {
-    internalId: 'EVT-3',
-    title: 'Vóleibol Femenino 2026',
-    category: 'VOLEIBOL',
-    eventDate: '2026-10-25',
-    status: 'PUBLISHED',
-    isOfficial: true,
-    location: 'Valparaíso, Chile',
-    description: 'Torneo femenino de vóleibol universitario.',
-    address: 'Av. Brasil 2950, Valparaíso',
-  },
-];
+import {
+  DirectorApiService,
+  type AthenetEvent,
+} from '../services/director-api.service';
 
 @Component({
   selector: 'app-director-events',
@@ -75,7 +31,9 @@ const SAMPLE_EVENTS: AthenetEvent[] = [
   templateUrl: './events.html',
   styleUrl: './events.scss',
 })
-export class DirectorEventsComponent {
+export class DirectorEventsComponent implements OnInit {
+  private readonly directorApi = inject(DirectorApiService);
+
   protected readonly columns: TableColumn<AthenetEvent>[] = [
     {
       key: 'internalId',
@@ -157,7 +115,34 @@ export class DirectorEventsComponent {
     },
   ];
 
-  protected readonly dataSource = SAMPLE_EVENTS;
+  // Estado reactivo para la tabla alimentada desde la API
+  protected readonly events = signal<AthenetEvent[]>([]);
+  protected readonly loading = signal<boolean>(true);
+  protected readonly error = signal<string | null>(null);
+
+  ngOnInit(): void {
+    this.loadEvents();
+  }
+
+  loadEvents(): void {
+    this.loading.set(true);
+    this.error.set(null);
+
+    this.directorApi.getEvents().subscribe({
+      next: (data) => {
+        this.events.set(data);
+        this.loading.set(false);
+      },
+      error: (err) => {
+        console.error('Error al obtener eventos desde DirectorApiService:', err);
+        this.error.set(
+          'No se pudo conectar con el servidor para obtener los eventos. Verifica que el backend esté en ejecución.',
+        );
+        this.loading.set(false);
+        this.events.set([]);
+      },
+    });
+  }
 
   getCategoryLabel(category: string): string {
     const map: Record<string, string> = {

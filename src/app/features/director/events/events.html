@@ -7,7 +7,25 @@
     </div>
   </div>
 
-  <app-table [columns]="columns" [data]="dataSource">
+  @if (error()) {
+    <div class="error-banner">
+      <div class="error-content">
+        <mat-icon class="error-icon">error_outline</mat-icon>
+        <span class="error-text">{{ error() }}</span>
+      </div>
+      <button type="button" class="retry-btn" (click)="loadEvents()">
+        <mat-icon class="retry-icon">refresh</mat-icon>
+        Reintentar
+      </button>
+    </div>
+  }
+
+  <app-table
+    [columns]="columns"
+    [data]="events()"
+    [loading]="loading()"
+    emptyMessage="No hay eventos institucionales registrados"
+  >
     <!-- 1. ID -->
     <ng-template tableCell="internalId" let-row>
       <span class="event-id">{{ row.internalId }}</span>
