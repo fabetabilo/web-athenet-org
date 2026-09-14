@@ -11,6 +11,7 @@ import {
   PillComponent,
   type PillVariant,
 } from '../../../shared/components/pill/pill';
+import { ButtonComponent } from '../../../shared/components/button/button';
 import {
   DirectorApiService,
   type AthenetEvent,
@@ -27,6 +28,7 @@ import {
     TableComponent,
     TableCellDirective,
     PillComponent,
+    ButtonComponent,
   ],
   templateUrl: './events.html',
   styleUrl: './events.scss',
@@ -193,5 +195,9 @@ export class DirectorEventsComponent implements OnInit {
 
   onDelete(event: AthenetEvent): void {
     console.log('Eliminar evento:', event);
+  }
+
+  onCreateEvent(): void {
+    console.log('Crear nuevo evento institucional');
   }
 }
