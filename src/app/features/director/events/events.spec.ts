@@ -1,6 +1,7 @@
 import { ComponentFixture, TestBed } from '@angular/core/testing';
 import { of, throwError } from 'rxjs';
 import { provideAnimations } from '@angular/platform-browser/animations';
+import { MatDialog } from '@angular/material/dialog';
 import { DirectorEventsComponent } from './events';
 import {
   DirectorApiService,
@@ -10,7 +11,8 @@ import {
 describe('DirectorEventsComponent', () => {
   let component: DirectorEventsComponent;
   let fixture: ComponentFixture<DirectorEventsComponent>;
-  let apiServiceMock: { getEvents: any };
+  let apiServiceMock: { getEvents: any; deleteEvent: any };
+  let dialogMock: { open: any };
 
   const mockEvents: AthenetEvent[] = [
     {
@@ -36,6 +38,13 @@ describe('DirectorEventsComponent', () => {
   beforeEach(async () => {
     apiServiceMock = {
       getEvents: vi.fn().mockReturnValue(of(mockEvents)),
+      deleteEvent: vi.fn().mockReturnValue(of(undefined)),
+    };
+
+    dialogMock = {
+      open: vi.fn().mockReturnValue({
+        afterClosed: vi.fn().mockReturnValue(of(true)),
+      }),
     };
 
     await TestBed.configureTestingModule({
@@ -43,6 +52,7 @@ describe('DirectorEventsComponent', () => {
       providers: [
         provideAnimations(),
         { provide: DirectorApiService, useValue: apiServiceMock },
+        { provide: MatDialog, useValue: dialogMock },
       ],
     }).compileComponents();
 
@@ -116,5 +126,68 @@ describe('DirectorEventsComponent', () => {
     const onCreateSpy = vi.spyOn(component, 'onCreateEvent');
     newEventBtn.click();
     expect(onCreateSpy).toHaveBeenCalledTimes(1);
+  });
+
+  describe('onDelete', () => {
+    it('debe abrir el diálogo de confirmación con los datos del evento', () => {
+      fixture.detectChanges();
+      const targetEvent = mockEvents[0];
+
+      component.onDelete(targetEvent);
+
+      expect(dialogMock.open).toHaveBeenCalledWith(
+        expect.anything(),
+        expect.objectContaining({
+          data: expect.objectContaining({
+            title: 'Confirmación de Eliminación',
+            targetName: targetEvent.title,
+            confirmVariant: 'danger',
+          }),
+        }),
+      );
+    });
+
+    it('debe llamar a deleteEvent y actualizar la lista cuando el usuario confirma', () => {
+      fixture.detectChanges();
+      const targetEvent = mockEvents[0];
+      dialogMock.open.mockReturnValue({
+        afterClosed: vi.fn().mockReturnValue(of(true)),
+      });
+
+      component.onDelete(targetEvent);
+
+      expect(apiServiceMock.deleteEvent).toHaveBeenCalledWith(targetEvent.internalId);
+      expect(component['events']().length).toBe(1);
+      expect(component['events']()[0].internalId).toBe('EVT-2');
+    });
+
+    it('no debe llamar a deleteEvent si el usuario cancela en el diálogo', () => {
+      fixture.detectChanges();
+      const targetEvent = mockEvents[0];
+      dialogMock.open.mockReturnValue({
+        afterClosed: vi.fn().mockReturnValue(of(false)),
+      });
+
+      component.onDelete(targetEvent);
+
+      expect(apiServiceMock.deleteEvent).not.toHaveBeenCalled();
+      expect(component['events']().length).toBe(2);
+    });
+
+    it('debe registrar error si deleteEvent falla', () => {
+      fixture.detectChanges();
+      const targetEvent = mockEvents[0];
+      dialogMock.open.mockReturnValue({
+        afterClosed: vi.fn().mockReturnValue(of(true)),
+      });
+      apiServiceMock.deleteEvent.mockReturnValue(
+        throwError(() => new Error('Forbidden')),
+      );
+
+      component.onDelete(targetEvent);
+
+      expect(component['error']()).toContain(`No se pudo eliminar el evento "${targetEvent.title}"`);
+      expect(component['events']().length).toBe(2);
+    });
   });
 });

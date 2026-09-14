@@ -1,0 +1,41 @@
+<div class="confirm-dialog" [class]="'dialog-variant-' + safeVariant">
+  <div class="dialog-header">
+    @if (data.icon !== null) {
+      <div class="dialog-icon-wrapper" [class]="'variant-' + safeVariant">
+        <mat-icon>{{ data.icon || defaultIcon }}</mat-icon>
+      </div>
+    }
+    <div class="dialog-header-text">
+      <h2 class="dialog-title">{{ data.title || 'Confirmar Acción' }}</h2>
+    </div>
+  </div>
+
+  <div class="dialog-body">
+    <p class="dialog-message">
+      {{ data.message || '¿Deseas continuar con esta acción?' }}
+      @if (data.targetName) {
+        <strong class="highlight-target">«{{ data.targetName }}»</strong>
+      }
+    </p>
+    @if (data.description) {
+      <p class="dialog-subtext">{{ data.description }}</p>
+    }
+  </div>
+
+  <div class="dialog-actions">
+    <app-button
+      variant="secondary"
+      (btnClick)="onCancel()"
+    >
+      {{ data.cancelText || 'Cancelar' }}
+    </app-button>
+
+    <app-button
+      [variant]="data.confirmVariant || defaultConfirmVariant"
+      [icon]="data.confirmIcon !== undefined ? data.confirmIcon : defaultConfirmIcon"
+      (btnClick)="onConfirm()"
+    >
+      {{ data.confirmText || defaultConfirmText }}
+    </app-button>
+  </div>
+</div>

@@ -26,6 +26,7 @@ La capa de interfaz combina la logica funcional de Angular Material con el siste
 | Tabla | `<app-table>` | [comp-table.md](comp-table.md) | Tabla responsiva con ordenamiento, filtros en cabecera y proyeccion de celdas. |
 | Pildora | `<app-pill>` | [comp-pill.md](comp-pill.md) | Indicador visual semantico para estados, tags con icono o etiquetas simples. |
 | Boton | `<app-button>` | [comp-button.md](comp-button.md) | Boton con variantes semanticas, icono, estado loading y tokens globales. |
+| Diálogo Modal | `ConfirmDialogComponent` | [comp-confirm-dialog.md](comp-confirm-dialog.md) | Diálogo agnóstico para confirmación y envío (`submit-dialog`) con backdrop oscuro. |
 
 ---
 

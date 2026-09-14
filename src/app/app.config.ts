@@ -1,7 +1,8 @@
-import { ApplicationConfig, APP_INITIALIZER, provideBrowserGlobalErrorListeners } from '@angular/core'
+import { ApplicationConfig, APP_INITIALIZER, importProvidersFrom, provideBrowserGlobalErrorListeners } from '@angular/core'
 import { provideRouter } from '@angular/router'
 import { provideAnimationsAsync } from '@angular/platform-browser/animations/async'
 import { provideHttpClient, withFetch } from '@angular/common/http'
+import { MatDialogModule } from '@angular/material/dialog'
 import {
   type IPublicClientApplication,
   PublicClientApplication,
@@ -21,6 +22,7 @@ const baseProviders = [
   provideRouter(routes),
   provideAnimationsAsync(),
   provideHttpClient(withFetch()),
+  importProvidersFrom(MatDialogModule),
 ]
 
 /** Factory síncrona: crea la instancia MSAL (sin inicializar aún). */
