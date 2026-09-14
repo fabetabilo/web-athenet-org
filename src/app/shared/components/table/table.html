@@ -1,0 +1,136 @@
+<div class="table-card">
+  <div class="table-responsive-wrapper">
+    <table mat-table [dataSource]="dataSource" matSort class="app-table" [style.min-width]="minWidth()">
+
+      @for (col of columns(); track col.key) {
+        <ng-container [matColumnDef]="col.key">
+          <!-- Header -->
+          <th
+            mat-header-cell
+            *matHeaderCellDef
+            [mat-sort-header]="col.key"
+            [disabled]="!col.sortable"
+            [style.width]="col.width"
+            [class.text-center]="col.align === 'center'"
+            [class.text-right]="col.align === 'right'"
+          >
+            <div
+              class="header-cell-content"
+              [class.justify-center]="col.align === 'center'"
+              [class.justify-end]="col.align === 'right'"
+            >
+              <span class="header-label">{{ col.header }}</span>
+
+              @if (col.filterable) {
+                <button
+                  type="button"
+                  class="col-filter-btn"
+                  [class.filter-active]="isFilterActive(col.key)"
+                  [matMenuTriggerFor]="filterMenu"
+                  (click)="$event.stopPropagation()"
+                  [title]="'Filtrar por ' + col.header"
+                  [attr.aria-label]="'Filtrar por ' + col.header"
+                >
+                  <mat-icon class="filter-icon">filter_alt</mat-icon>
+                </button>
+
+                <mat-menu #filterMenu="matMenu" class="table-filter-menu">
+                  <div class="filter-panel" (click)="$event.stopPropagation()">
+                    <div class="filter-header">
+                      <span class="filter-title">Filtrar por {{ col.header }}</span>
+                      @if (isFilterActive(col.key)) {
+                        <button
+                          type="button"
+                          class="filter-clear-btn"
+                          (click)="clearColumnFilter(col.key, $event)"
+                        >
+                          Limpiar
+                        </button>
+                      }
+                    </div>
+
+                    @if (col.filterType === 'select') {
+                      <div class="filter-select-options">
+                        <button
+                          type="button"
+                          class="filter-option-item"
+                          [class.selected]="!isFilterActive(col.key)"
+                          (click)="applyColumnFilter(col.key, 'ALL')"
+                        >
+                          <span class="option-check">
+                            @if (!isFilterActive(col.key)) {
+                              <mat-icon>check</mat-icon>
+                            }
+                          </span>
+                          Todos
+                        </button>
+                        @for (opt of getSelectOptions(col); track opt.value) {
+                          <button
+                            type="button"
+                            class="filter-option-item"
+                            [class.selected]="getColumnFilterValue(col.key) === opt.value"
+                            (click)="applyColumnFilter(col.key, opt.value)"
+                          >
+                            <span class="option-check">
+                              @if (getColumnFilterValue(col.key) === opt.value) {
+                                <mat-icon>check</mat-icon>
+                              }
+                            </span>
+                            {{ opt.label }}
+                          </button>
+                        }
+                      </div>
+                    } @else {
+                      <div class="filter-input-wrapper">
+                        <mat-icon class="search-icon">search</mat-icon>
+                        <input
+                          type="text"
+                          class="filter-search-input"
+                          placeholder="Buscar..."
+                          [value]="getColumnFilterValue(col.key)"
+                          (input)="applyColumnFilter(col.key, $any($event.target).value)"
+                          (click)="$event.stopPropagation()"
+                        />
+                      </div>
+                    }
+                  </div>
+                </mat-menu>
+              }
+            </div>
+          </th>
+
+          <!-- Data Cell -->
+          <td
+            mat-cell
+            *matCellDef="let row"
+            [class.text-center]="col.align === 'center'"
+            [class.text-right]="col.align === 'right'"
+          >
+            @if (getTemplate(col.key); as customTemplate) {
+              <ng-container
+                *ngTemplateOutlet="customTemplate; context: { $implicit: row, row: row, col: col }"
+              ></ng-container>
+            } @else {
+              <span class="default-cell-text">{{ row[col.key] }}</span>
+            }
+          </td>
+        </ng-container>
+      }
+
+      <tr mat-header-row *matHeaderRowDef="displayedColumns"></tr>
+      <tr mat-row *matRowDef="let row; columns: displayedColumns;" class="app-table-row"></tr>
+
+      <!-- Empty State -->
+      @if (dataSource.filteredData.length === 0) {
+        <tr class="mat-row no-data-row">
+          <td class="mat-cell" [attr.colspan]="displayedColumns.length">
+            <div class="empty-state">
+              <mat-icon class="empty-icon">search_off</mat-icon>
+              <span>No se encontraron resultados con los filtros aplicados.</span>
+            </div>
+          </td>
+        </tr>
+      }
+    </table>
+  </div>
+</div>

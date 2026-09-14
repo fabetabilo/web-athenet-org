@@ -2,6 +2,8 @@ import { Routes } from '@angular/router'
 import { LoginComponent } from './login/login'
 import { AdminDashboardComponent } from './features/admin/admin'
 import { DirectorComponent } from './features/director/director'
+import { DirectorHomeComponent } from './features/director/home/home'
+import { DirectorEventsComponent } from './features/director/events/events'
 import { UnauthorizedComponent } from './shared/unauthorized/unauthorized'
 import { RoleGuard } from '../auth/guards/role.guard'
 
@@ -22,7 +24,11 @@ export const routes: Routes = [
     path: 'director', 
     component: DirectorComponent,
     canActivate: [RoleGuard],
-    data: { roles: ['director'] }
+    data: { roles: ['director'] },
+    children: [
+      { path: '', component: DirectorHomeComponent },
+      { path: 'events', component: DirectorEventsComponent },
+    ]
   },
 
   // Usuario autenticado sin rol asignado

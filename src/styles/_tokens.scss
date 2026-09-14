@@ -85,4 +85,37 @@
   --transition-fast: 0.15s ease;
   --transition-base: 0.2s ease;
   --transition-slow: 0.3s ease;
+
+  // ── Table Tokens ──
+  --table-header-bg:        var(--color-slate-200);
+  --table-header-text:      var(--color-slate-900);
+  --table-row-hover:        var(--color-slate-50);
+
+  // ── Pill / Badge Tokens ──
+  --pill-success-bg:   #ecfdf5;
+  --pill-success-text: #059669;
+  --pill-success-dot:  #10b981;
+
+  --pill-warning-bg:   #fffbeb;
+  --pill-warning-text: #d97706;
+  --pill-warning-dot:  #f59e0b;
+
+  --pill-danger-bg:    #fef2f2;
+  --pill-danger-text:  #dc2626;
+  --pill-danger-dot:   #ef4444;
+
+  --pill-info-bg:      rgba(0, 200, 255, 0.12);
+  --pill-info-text:    #009dc9;
+  --pill-info-dot:     var(--color-primary);
+
+  --pill-neutral-bg:   var(--color-slate-100);
+  --pill-neutral-text: var(--color-slate-700);
+  --pill-neutral-dot:  var(--color-slate-400);
+
+  // ── Action Buttons ──
+  --action-btn-hover-bg:        var(--color-slate-100);
+  --action-btn-edit:            var(--color-slate-600);
+  --action-btn-edit-hover:      var(--color-primary);
+  --action-btn-delete:          var(--color-slate-400);
+  --action-btn-delete-hover:    var(--color-error);
 }

@@ -1,0 +1,98 @@
+:host {
+  display: inline-flex;
+  vertical-align: middle;
+}
+
+.pill-container {
+  display: inline-flex;
+  align-items: center;
+  border-radius: var(--radius-full);
+  font-family: var(--font-family-base);
+  font-weight: 600;
+  line-height: 1;
+  white-space: nowrap;
+  letter-spacing: 0.01em;
+  transition: background-color var(--transition-fast), color var(--transition-fast);
+
+  &.size-sm {
+    gap: 0.375rem;
+    padding: 0.25rem 0.625rem;
+    font-size: 0.75rem;
+
+    .pill-dot {
+      width: 6px;
+      height: 6px;
+    }
+
+    .pill-icon {
+      font-size: 14px;
+      width: 14px;
+      height: 14px;
+      line-height: 14px;
+    }
+  }
+
+  &.size-md {
+    gap: 0.5rem;
+    padding: 0.375rem 0.875rem;
+    font-size: 0.8125rem;
+
+    .pill-dot {
+      width: 8px;
+      height: 8px;
+    }
+
+    .pill-icon {
+      font-size: 16px;
+      width: 16px;
+      height: 16px;
+      line-height: 16px;
+    }
+  }
+
+  .pill-dot {
+    border-radius: 50%;
+    flex-shrink: 0;
+  }
+
+  .pill-label {
+    display: inline-flex;
+    align-items: center;
+  }
+
+  &.variant-success {
+    background-color: var(--pill-success-bg);
+    color: var(--pill-success-text);
+    .pill-dot { background-color: var(--pill-success-dot); }
+    .pill-icon { color: var(--pill-success-text); }
+  }
+
+  &.variant-warning {
+    background-color: var(--pill-warning-bg);
+    color: var(--pill-warning-text);
+    .pill-dot { background-color: var(--pill-warning-dot); }
+    .pill-icon { color: var(--pill-warning-text); }
+  }
+
+  &.variant-danger {
+    background-color: var(--pill-danger-bg);
+    color: var(--pill-danger-text);
+    .pill-dot { background-color: var(--pill-danger-dot); }
+    .pill-icon { color: var(--pill-danger-text); }
+  }
+
+  &.variant-info {
+    background-color: var(--pill-info-bg);
+    color: var(--pill-info-text);
+    .pill-dot { background-color: var(--pill-info-dot); }
+    .pill-icon { color: var(--pill-info-text); }
+  }
+
+  &.variant-neutral {
+    background-color: var(--pill-neutral-bg);
+    color: var(--pill-neutral-text);
+    font-weight: 500;
+    .pill-dot { background-color: var(--pill-neutral-dot); }
+    .pill-icon { color: var(--pill-neutral-text); }
+  }
+}

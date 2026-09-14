@@ -1,0 +1,11 @@
+<span class="pill-container" [ngClass]="['variant-' + variant(), 'size-' + size()]">
+  @if (dot()) {
+    <span class="pill-dot"></span>
+  }
+  @if (icon()) {
+    <mat-icon class="pill-icon">{{ icon() }}</mat-icon>
+  }
+  <span class="pill-label">
+    <ng-content></ng-content>
+  </span>
+</span>
