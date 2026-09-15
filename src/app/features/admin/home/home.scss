@@ -1,0 +1,135 @@
+// ─── Admin Home (panel de prueba de API) ──────────────────────────────────
+// Layout classes (dashboard-content, dashboard-header, header-info, role-badge)
+// are in src/styles/_layout.scss (global).
+
+:host {
+  display: block;
+  font-family: var(--font-family-base);
+}
+
+// ── API Test Section ──
+
+.api-section {
+  background: var(--color-bg-surface);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-xl);
+  padding: 1.75rem;
+}
+
+.api-header {
+  margin-bottom: var(--space-4);
+
+  h2 {
+    margin: 0 0 0.375rem;
+    font-size: 1.125rem;
+    font-weight: 600;
+    color: var(--color-text-heading);
+  }
+}
+
+.api-url {
+  margin: 0;
+  font-size: 0.875rem;
+  color: var(--color-text-muted);
+
+  code {
+    font-family: var(--font-family-mono);
+    font-size: 0.8125rem;
+    background: var(--color-slate-100);
+    padding: 0.1rem 0.375rem;
+    border-radius: var(--radius-sm);
+  }
+}
+
+.api-note {
+  margin: 0 0 var(--space-5);
+  font-size: 0.875rem;
+  color: var(--color-text-muted);
+  line-height: 1.6;
+  padding: var(--space-3) var(--space-4);
+  background: var(--color-warning-bg);
+  border: 1px solid var(--color-warning-border);
+  border-radius: var(--radius-md);
+
+  code {
+    font-family: var(--font-family-mono);
+    font-size: 0.8125rem;
+    color: var(--color-warning-text);
+  }
+}
+
+.api-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-2);
+  padding: 0.625rem var(--space-5);
+  background: var(--color-slate-900);
+  color: var(--color-white);
+  border: none;
+  border-radius: var(--radius-md);
+  font-family: inherit;
+  font-size: 0.9375rem;
+  font-weight: 500;
+  cursor: pointer;
+  transition: background var(--transition-fast), opacity var(--transition-fast);
+
+  &:hover:not(:disabled) {
+    background: var(--color-slate-800);
+  }
+
+  &:disabled {
+    opacity: 0.65;
+    cursor: not-allowed;
+  }
+}
+
+.spinner {
+  display: inline-block;
+  width: 14px;
+  height: 14px;
+  border: 2px solid rgba(255, 255, 255, 0.3);
+  border-top-color: var(--color-white);
+  border-radius: 50%;
+  animation: spin 0.7s linear infinite;
+}
+
+@keyframes spin {
+  to { transform: rotate(360deg); }
+}
+
+.api-error {
+  margin-top: var(--space-4);
+  padding: var(--space-3) var(--space-4);
+  background: var(--color-error-bg);
+  border: 1px solid var(--color-error-border);
+  border-radius: var(--radius-md);
+  color: var(--color-error-text);
+  font-size: 0.875rem;
+  line-height: 1.5;
+}
+
+.result-block {
+  margin-top: var(--space-5);
+
+  h3 {
+    margin: 0 0 var(--space-2);
+    font-size: 0.875rem;
+    font-weight: 600;
+    color: var(--color-slate-700);
+    font-family: var(--font-family-mono);
+  }
+}
+
+.json-box {
+  margin: 0;
+  padding: var(--space-4);
+  background: var(--color-slate-900);
+  color: var(--color-slate-200);
+  border-radius: var(--radius-lg);
+  font-family: var(--font-family-mono);
+  font-size: 0.8125rem;
+  line-height: 1.6;
+  overflow-x: auto;
+  white-space: pre-wrap;
+  word-break: break-all;
+}

@@ -1,6 +1,8 @@
 import { Routes } from '@angular/router'
 import { LoginComponent } from './login/login'
 import { AdminDashboardComponent } from './features/admin/admin'
+import { AdminHomeComponent } from './features/admin/home/home'
+import { InstitucionesComponent } from './features/admin/instituciones/instituciones'
 import { DirectorComponent } from './features/director/director'
 import { DirectorHomeComponent } from './features/director/home/home'
 import { DirectorEventsComponent } from './features/director/events/events'
@@ -12,16 +14,20 @@ export const routes: Routes = [
   { path: 'login', component: LoginComponent },
 
   // Super admin — por encima de todos los roles
-  { 
-    path: 'admin', 
+  {
+    path: 'admin',
     component: AdminDashboardComponent,
     canActivate: [RoleGuard],
-    data: { roles: ['admin'] }
+    data: { roles: ['admin'] },
+    children: [
+      { path: '', component: AdminHomeComponent },
+      { path: 'instituciones', component: InstitucionesComponent },
+    ]
   },
 
   // Rol Director
-  { 
-    path: 'director', 
+  {
+    path: 'director',
     component: DirectorComponent,
     canActivate: [RoleGuard],
     data: { roles: ['director'] },

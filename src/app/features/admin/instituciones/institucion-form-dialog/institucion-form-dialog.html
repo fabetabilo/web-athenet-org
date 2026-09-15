@@ -1,0 +1,81 @@
+<div class="institucion-form-dialog">
+  <div class="dialog-header">
+    <div class="dialog-icon-wrapper variant-primary">
+      <mat-icon>{{ isEdit ? 'edit' : 'add_business' }}</mat-icon>
+    </div>
+    <div class="dialog-header-text">
+      <h2 class="dialog-title">{{ isEdit ? 'Editar Institución' : 'Nueva Institución' }}</h2>
+    </div>
+  </div>
+
+  <form class="dialog-body" [formGroup]="form" (ngSubmit)="onSubmit()">
+    <div class="form-field">
+      <label class="form-label" for="nombre">Nombre</label>
+      <input
+        id="nombre"
+        class="form-input"
+        type="text"
+        formControlName="nombre"
+        placeholder="Ej: Universidad de Chile"
+        [class.has-error]="form.controls.nombre.invalid && form.controls.nombre.touched"
+      />
+      @if (form.controls.nombre.invalid && form.controls.nombre.touched) {
+        <span class="form-error">
+          @if (form.controls.nombre.hasError('required')) {
+            El nombre es obligatorio.
+          } @else if (form.controls.nombre.hasError('maxlength')) {
+            El nombre no puede superar los 150 caracteres.
+          }
+        </span>
+      }
+    </div>
+
+    <div class="form-field">
+      <label class="form-label" for="sigla">Sigla</label>
+      <input
+        id="sigla"
+        class="form-input"
+        type="text"
+        formControlName="sigla"
+        placeholder="Ej: UCH"
+      />
+    </div>
+
+    <div class="form-field">
+      <label class="form-label" for="imagenUrl">URL de imagen</label>
+      <input
+        id="imagenUrl"
+        class="form-input"
+        type="text"
+        formControlName="imagenUrl"
+        placeholder="https://..."
+      />
+    </div>
+
+    @if (error()) {
+      <div class="form-error-banner">
+        <mat-icon class="form-error-banner-icon">error_outline</mat-icon>
+        <span>{{ error() }}</span>
+      </div>
+    }
+  </form>
+
+  <div class="dialog-actions">
+    <app-button
+      variant="secondary"
+      [disabled]="guardando()"
+      (btnClick)="onCancel()"
+    >
+      Cancelar
+    </app-button>
+
+    <app-button
+      variant="primary"
+      [icon]="isEdit ? 'save' : 'add'"
+      [loading]="guardando()"
+      (btnClick)="onSubmit()"
+    >
+      {{ isEdit ? 'Guardar cambios' : 'Crear institución' }}
+    </app-button>
+  </div>
+</div>
