@@ -1,0 +1,16 @@
+// Anula el "surface" por defecto de Angular Material (fondo blanco,
+// padding, sombra) para que nuestro <app-toast> controle 100% el estilo.
+// Estas clases viven fuera del encapsulamiento del componente (Material
+// las monta directo en el overlay), por eso van en un archivo global.
+.athenet-toast-panel {
+  .mdc-snackbar__surface {
+    background: transparent !important;
+    box-shadow: none !important;
+    padding: 0 !important;
+    border-radius: 0 !important;
+  }
+
+  .mat-mdc-snack-bar-label {
+    padding: 0 !important;
+  }
+}

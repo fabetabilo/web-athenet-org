@@ -1,0 +1,89 @@
+<div class="instituciones-page">
+  <div class="dashboard-header">
+    <div class="header-info">
+      <span class="role-badge">Admin</span>
+      <h1>Instituciones</h1>
+      <p class="welcome">Registro y administración de instituciones adscritas a la plataforma</p>
+    </div>
+  </div>
+
+  @if (error()) {
+    <div class="error-banner">
+      <div class="error-content">
+        <mat-icon class="error-icon">error_outline</mat-icon>
+        <span class="error-text">{{ error() }}</span>
+      </div>
+      <button type="button" class="retry-btn" (click)="loadInstituciones()">
+        <mat-icon class="retry-icon">refresh</mat-icon>
+        Reintentar
+      </button>
+    </div>
+  }
+
+  <div class="table-toolbar">
+    <div class="toolbar-search">
+      <mat-icon class="toolbar-search-icon">search</mat-icon>
+      <input
+        type="text"
+        class="toolbar-search-input"
+        placeholder="Buscar institución..."
+        [value]="searchTerm()"
+        (input)="onSearchChange($any($event.target).value)"
+      />
+    </div>
+
+    <app-button variant="primary" icon="add" (click)="onCreateInstitucion()">Nueva Institución</app-button>
+  </div>
+
+  <app-table
+    [columns]="columns"
+    [data]="instituciones()"
+    [loading]="loading()"
+    emptyMessage="No hay instituciones registradas"
+  >
+    <!-- Nombre -->
+    <ng-template tableCell="nombre" let-row>
+      <span class="institucion-nombre">{{ row.nombre }}</span>
+    </ng-template>
+
+    <!-- Sigla -->
+    <ng-template tableCell="sigla" let-row>
+      <span class="institucion-sigla">{{ row.sigla || '—' }}</span>
+    </ng-template>
+
+    <!-- Estado -->
+    <ng-template tableCell="activo" let-row>
+      @if (row.activo) {
+        <app-pill variant="success" [dot]="true">Activa</app-pill>
+      } @else {
+        <app-pill variant="neutral" [dot]="true">Inactiva</app-pill>
+      }
+    </ng-template>
+
+    <!-- Acciones -->
+    <ng-template tableCell="actions" let-row>
+      <div class="actions-group">
+        <button
+          mat-icon-button
+          class="action-btn edit-btn"
+          type="button"
+          (click)="onEdit(row)"
+          title="Editar institución"
+          aria-label="Editar institución"
+        >
+          <mat-icon>edit</mat-icon>
+        </button>
+        <button
+          mat-icon-button
+          class="action-btn delete-btn"
+          type="button"
+          (click)="onDelete(row)"
+          title="Eliminar institución"
+          aria-label="Eliminar institución"
+        >
+          <mat-icon>delete</mat-icon>
+        </button>
+      </div>
+    </ng-template>
+  </app-table>
+</div>
