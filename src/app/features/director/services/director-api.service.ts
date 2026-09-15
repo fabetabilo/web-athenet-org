@@ -140,7 +140,9 @@ export class DirectorApiService {
   getEventByInternalId(internalId: string): Observable<AthenetEvent> {
     return this.http
       .get<any>(`${this.eventsApiUrl}/api/public/events/${internalId}`)
-      .pipe(map(normalizeAthenetEvent));
+      .pipe(
+        delay(2000),
+        map(normalizeAthenetEvent));
   }
 
   /**
@@ -196,7 +198,10 @@ export class DirectorApiService {
           });
           return this.http
             .put<any>(`${this.eventsApiUrl}/api/admin/events/${id}`, payload, { headers })
-            .pipe(map(normalizeAthenetEvent));
+            .pipe(
+              delay(2000),
+              map(normalizeAthenetEvent
+              ));
         }),
       );
     }

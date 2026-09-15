@@ -49,8 +49,11 @@
 
         <h1 class="event-title">{{ event()!.title }}</h1>
       </div>
+    </div>
 
-      <div class="detail-header-actions">
+    <div class="table-toolbar">
+      @if (!isEdit()) {
+        <!-- MODO LECTURA -->
         <app-button
           variant="secondary"
           icon="edit"
@@ -67,8 +70,36 @@
         >
           Eliminar
         </app-button>
-      </div>
+      } @else {
+        <!-- MODO EDICIÓN -->
+        <app-button
+          variant="secondary"
+          icon="close"
+          (click)="onCancelEdit()"
+          [disabled]="isSaving()"
+          aria-label="Cancelar edición"
+        >
+          Cancelar
+        </app-button>
+        <app-button
+          variant="primary"
+          icon="save"
+          [loading]="isSaving()"
+          (click)="onSave()"
+          aria-label="Guardar cambios"
+        >
+          Guardar Cambios
+        </app-button>
+      }
     </div>
+
+    <!-- Banner de modo edición -->
+    @if (isEdit()) {
+      <div class="edit-mode-banner">
+        <mat-icon>edit_note</mat-icon>
+        <span>Modo edición activo — los cambios no se guardarán hasta confirmar</span>
+      </div>
+    }
 
     <!-- Formulario de detalle -->
     <form [formGroup]="form" class="detail-form" autocomplete="off">
@@ -203,9 +234,11 @@
           </mat-form-field>
         </div>
 
-        @if (photosArray.length > 0) {
+        @if (photosArray.length > 0 || isEdit()) {
           <div class="photos-list" formArrayName="photos">
-            <span class="photos-label">Fotos adicionales</span>
+            @if (photosArray.length > 0) {
+              <span class="photos-label">Fotos adicionales</span>
+            }
             @for (ctrl of photosArray.controls; track $index) {
               <div class="photo-row">
                 <mat-form-field appearance="outline" class="field-full">
@@ -218,13 +251,31 @@
                     placeholder="https://…"
                   />
                 </mat-form-field>
+                @if (isEdit()) {
+                  <button
+                    type="button"
+                    class="photo-remove-btn"
+                    (click)="removePhoto($index)"
+                    [attr.aria-label]="'Quitar foto ' + ($index + 1)"
+                    title="Quitar foto"
+                  >
+                    <mat-icon>close</mat-icon>
+                  </button>
+                }
               </div>
             }
           </div>
         }
 
-        @if (photosArray.length === 0) {
+        @if (photosArray.length === 0 && !isEdit()) {
           <p class="photos-empty">Sin fotos adicionales</p>
+        }
+
+        @if (isEdit()) {
+          <button type="button" class="photo-add-btn" (click)="addPhoto()">
+            <mat-icon>add_photo_alternate</mat-icon>
+            Agregar foto
+          </button>
         }
       </section>
 

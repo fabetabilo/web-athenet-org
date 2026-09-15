@@ -20,7 +20,10 @@ import { switchMap } from 'rxjs';
 
 import { ButtonComponent } from '../../../../shared/components/button/button';
 import { PillComponent, type PillVariant } from '../../../../shared/components/pill/pill';
-import { ConfirmDialogComponent } from '../../../../shared/components/confirm-dialog/confirm-dialog';
+import {
+  ConfirmDialogComponent,
+  type ConfirmDialogData,
+} from '../../../../shared/components/confirm-dialog/confirm-dialog';
 import {
   DirectorApiService,
   type AthenetEvent,
@@ -91,11 +94,13 @@ export class EventDetailComponent implements OnInit {
   private readonly dialog = inject(MatDialog);
   private readonly fb = inject(FormBuilder);
 
-  protected readonly event = signal<AthenetEvent | null>(null);
-  protected readonly loading = signal<boolean>(true);
-  protected readonly error = signal<string | null>(null);
-  /** Preparado para fase de edición. Por ahora siempre false. */
-  protected readonly isEdit = signal<boolean>(false);
+  protected readonly event    = signal<AthenetEvent | null>(null);
+  protected readonly loading  = signal<boolean>(true);
+  protected readonly error    = signal<string | null>(null);
+  /** Controla si el formulario está en modo edición o lectura */
+  protected readonly isEdit   = signal<boolean>(false);
+  /** true mientras la petición updateEvent() está en vuelo */
+  protected readonly isSaving = signal<boolean>(false);
 
   // Catálogos expuestos al template
   protected readonly categoryOptions = CATEGORY_OPTIONS;
@@ -174,10 +179,105 @@ export class EventDetailComponent implements OnInit {
     this.router.navigate(['/director/events']);
   }
 
-  /** Stub: activa modo edición en fase posterior */
+  /** Habilita todos los controles del formulario y activa el modo edición */
   onEdit(): void {
-    // TODO (fase 2): habilitar controles del formulario y mostrar botones Guardar/Cancelar
-    console.log('Editar evento (fase 2)');
+    this.form.enable();
+    this.photosArray.controls.forEach((c) => c.enable());
+    this.form.markAsPristine();
+    this.isEdit.set(true);
+  }
+
+  /**
+   * Cancela la edición.
+   * Si el formulario tiene cambios sin guardar, abre un ConfirmDialog de advertencia.
+   * Si no hay cambios, restaura el modo lectura directamente.
+   */
+  onCancelEdit(): void {
+    if (this.form.dirty) {
+      const data: ConfirmDialogData = {
+        title: '¿Descartar Cambios?',
+        message: 'Tienes modificaciones pendientes en el formulario.',
+        description: 'Si cancelas ahora, todos los datos no guardados se perderán.',
+        confirmText: 'Descartar',
+        confirmVariant: 'danger',
+        confirmIcon: 'delete_sweep',
+        cancelText: 'Continuar editando',
+        variant: 'warning',
+        icon: 'warning_amber',
+      };
+      const ref = this.dialog.open(ConfirmDialogComponent, {
+        data,
+        width: '460px',
+        maxWidth: '92vw',
+        panelClass: 'athenet-dialog-panel',
+      });
+      ref.afterClosed().subscribe((discard: boolean) => {
+        if (discard) this._restoreReadMode();
+      });
+    } else {
+      this._restoreReadMode();
+    }
+  }
+
+  /**
+   * Valida el formulario, abre un ConfirmDialog de confirmación y llama a updateEvent().
+   * En éxito: actualiza el Signal event() y restaura el modo lectura.
+   * En error: muestra el banner de error.
+   */
+  onSave(): void {
+    this.form.markAllAsTouched();
+    if (this.form.invalid) return;
+
+    const ev = this.event()!;
+    const data: ConfirmDialogData = {
+      title: 'Guardar Cambios',
+      message: '¿Confirmas los cambios realizados al evento',
+      targetName: ev.title,
+      confirmText: 'Guardar',
+      confirmVariant: 'primary',
+      confirmIcon: 'save',
+      cancelText: 'Seguir editando',
+      variant: 'primary',
+      icon: 'edit_note',
+    };
+    const ref = this.dialog.open(ConfirmDialogComponent, {
+      data,
+      width: '460px',
+      maxWidth: '92vw',
+      panelClass: 'athenet-dialog-panel',
+    });
+
+    ref.afterClosed().subscribe((confirmed: boolean) => {
+      if (!confirmed) return;
+
+      this.isSaving.set(true);
+      this.error.set(null);
+      const id = ev.id ?? ev.internalId;
+      this.directorApi.updateEvent(id, this._buildPayload()).subscribe({
+        next: (updated) => {
+          this.event.set(updated);
+          this.isSaving.set(false);
+          this._restoreReadMode();
+        },
+        error: (err: unknown) => {
+          console.error('Error al guardar evento:', err);
+          this.error.set('No se pudieron guardar los cambios. Por favor, intenta nuevamente.');
+          this.isSaving.set(false);
+        },
+      });
+    });
+  }
+
+  /** Agrega un control vacío al FormArray de fotos */
+  addPhoto(): void {
+    this.photosArray.push(this.fb.control(''));
+    this.form.markAsDirty();
+  }
+
+  /** Elimina la foto en la posición dada del FormArray */
+  removePhoto(index: number): void {
+    this.photosArray.removeAt(index);
+    this.form.markAsDirty();
   }
 
   onDelete(): void {
@@ -220,8 +320,41 @@ export class EventDetailComponent implements OnInit {
 
   // ── Internos ───────────────────────────────────────────────────────────────
 
+  /**
+   * Restaura el formulario con los valores del Signal event() (sin llamar a la API)
+   * y deshabilita todos los controles volviendo al modo lectura.
+   */
+  private _restoreReadMode(): void {
+    const ev = this.event();
+    if (ev) this._patchForm(ev);
+    this.form.disable();
+    this.photosArray.controls.forEach((c) => c.disable());
+    this.form.markAsPristine();
+    this.isEdit.set(false);
+  }
+
+  /**
+   * Construye el payload para updateEvent() desde los valores actuales del formulario.
+   * Serializa la fecha como string "yyyy-MM-dd" que espera el backend.
+   */
+  private _buildPayload(): Partial<AthenetEvent> {
+    const raw = this.form.getRawValue();
+    const eventDate = raw.eventDate instanceof Date
+      ? raw.eventDate.toISOString().split('T')[0]
+      : (raw.eventDate ?? '');
+    
+    const originalEvent = this.event();
+    return {
+      ...raw,
+      id: originalEvent?.id,
+      internalId: originalEvent?.internalId,
+      eventDate,
+      photos: (this.photosArray.getRawValue() as string[]).filter((u: string) => u.trim() !== ''),
+    };
+  }
+
   private _patchForm(ev: AthenetEvent): void {
-    // Reconstruir el FormArray de photos
+    // Reconstruir el FormArray de photos (siempre disabled al patchear)
     const photosArray = this.form.get('photos') as FormArray;
     photosArray.clear();
     (ev.photos ?? []).forEach((url) => {
