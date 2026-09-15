@@ -16,7 +16,7 @@ import { MatNativeDateModule } from '@angular/material/core';
 import { MatIconModule } from '@angular/material/icon';
 import { MatButtonModule } from '@angular/material/button';
 import { MatDialog } from '@angular/material/dialog';
-import { switchMap } from 'rxjs';
+import { switchMap, of } from 'rxjs';
 
 import { ButtonComponent } from '../../../../shared/components/button/button';
 import { PillComponent, type PillVariant } from '../../../../shared/components/pill/pill';
@@ -99,7 +99,9 @@ export class EventDetailComponent implements OnInit {
   protected readonly error    = signal<string | null>(null);
   /** Controla si el formulario está en modo edición o lectura */
   protected readonly isEdit   = signal<boolean>(false);
-  /** true mientras la petición updateEvent() está en vuelo */
+  /** true cuando se está creando un nuevo evento en lugar de editar uno existente */
+  protected readonly isCreateMode = signal<boolean>(false);
+  /** true mientras la petición updateEvent/createEvent está en vuelo */
   protected readonly isSaving = signal<boolean>(false);
 
   // Catálogos expuestos al template
@@ -112,6 +114,7 @@ export class EventDetailComponent implements OnInit {
   ngOnInit(): void {
     // Construir el formulario deshabilitado (modo lectura)
     this.form = this.fb.group({
+      internalId:      [{ value: '', disabled: true }, Validators.required],
       title:           [{ value: '', disabled: true }, Validators.required],
       category:        [{ value: '', disabled: true }, Validators.required],
       type:            [{ value: '', disabled: true }, Validators.required],
@@ -134,11 +137,27 @@ export class EventDetailComponent implements OnInit {
       .pipe(
         switchMap((params) => {
           const internalId = params.get('internalId') ?? '';
+          if (internalId === 'new') {
+            return of(null);
+          }
+          // Si ya tenemos el evento cargado (ej. tras una creación exitosa) y
+          // la URL simplemente se actualizó con replaceUrl, no volvemos a la API.
+          const loaded = this.event();
+          if (loaded && loaded.internalId === internalId) {
+            return of(loaded);
+          }
           return this.directorApi.getEventByInternalId(internalId);
         }),
       )
       .subscribe({
         next: (ev) => {
+          if (!ev) {
+            this.isCreateMode.set(true);
+            this.isEdit.set(true);
+            this.form.enable();
+            this.loading.set(false);
+            return;
+          }
           this.event.set(ev);
           this._patchForm(ev);
           this.loading.set(false);
@@ -182,15 +201,17 @@ export class EventDetailComponent implements OnInit {
   /** Habilita todos los controles del formulario y activa el modo edición */
   onEdit(): void {
     this.form.enable();
+    // El ID Interno nunca se puede modificar en modo edición
+    this.form.get('internalId')?.disable();
     this.photosArray.controls.forEach((c) => c.enable());
     this.form.markAsPristine();
     this.isEdit.set(true);
   }
 
   /**
-   * Cancela la edición.
+   * Cancela la edición o creación.
    * Si el formulario tiene cambios sin guardar, abre un ConfirmDialog de advertencia.
-   * Si no hay cambios, restaura el modo lectura directamente.
+   * Si no hay cambios, restaura el modo lectura o vuelve a la lista (en creación).
    */
   onCancelEdit(): void {
     if (this.form.dirty) {
@@ -212,28 +233,42 @@ export class EventDetailComponent implements OnInit {
         panelClass: 'athenet-dialog-panel',
       });
       ref.afterClosed().subscribe((discard: boolean) => {
-        if (discard) this._restoreReadMode();
+        if (discard) {
+          if (this.isCreateMode()) {
+            this.router.navigate(['/director/events']);
+          } else {
+            this._restoreReadMode();
+          }
+        }
       });
     } else {
-      this._restoreReadMode();
+      if (this.isCreateMode()) {
+        this.router.navigate(['/director/events']);
+      } else {
+        this._restoreReadMode();
+      }
     }
   }
 
   /**
-   * Valida el formulario, abre un ConfirmDialog de confirmación y llama a updateEvent().
-   * En éxito: actualiza el Signal event() y restaura el modo lectura.
+   * Valida el formulario, abre un ConfirmDialog de confirmación y llama a createEvent o updateEvent.
+   * En éxito: actualiza el Signal event() y restaura el modo lectura, o navega a la nueva ruta si se creó.
    * En error: muestra el banner de error.
    */
   onSave(): void {
     this.form.markAllAsTouched();
     if (this.form.invalid) return;
 
-    const ev = this.event()!;
+    const ev = this.event();
+    const targetName = this.isCreateMode() ? this.form.get('title')?.value : ev?.title;
+    
     const data: ConfirmDialogData = {
-      title: 'Guardar Cambios',
-      message: '¿Confirmas los cambios realizados al evento',
-      targetName: ev.title,
-      confirmText: 'Guardar',
+      title: this.isCreateMode() ? 'Crear Evento' : 'Guardar Cambios',
+      message: this.isCreateMode()
+        ? '¿Confirmas la creación de este nuevo evento'
+        : '¿Confirmas los cambios realizados al evento',
+      targetName,
+      confirmText: this.isCreateMode() ? 'Crear' : 'Guardar',
       confirmVariant: 'primary',
       confirmIcon: 'save',
       cancelText: 'Seguir editando',
@@ -252,19 +287,45 @@ export class EventDetailComponent implements OnInit {
 
       this.isSaving.set(true);
       this.error.set(null);
-      const id = ev.id ?? ev.internalId;
-      this.directorApi.updateEvent(id, this._buildPayload()).subscribe({
-        next: (updated) => {
-          this.event.set(updated);
-          this.isSaving.set(false);
-          this._restoreReadMode();
-        },
-        error: (err: unknown) => {
-          console.error('Error al guardar evento:', err);
-          this.error.set('No se pudieron guardar los cambios. Por favor, intenta nuevamente.');
-          this.isSaving.set(false);
-        },
-      });
+      const payload = this._buildPayload();
+
+      if (this.isCreateMode()) {
+        this.directorApi.createEvent(payload).subscribe({
+          next: (created) => {
+            // Poblar el Signal con el evento devuelto por el backend y pasar a modo lectura
+            // sin disparar un ciclo de navegación que volvería a llamar a la API
+            this.event.set(created);
+            this._patchForm(created);
+            this.isCreateMode.set(false);
+            this._restoreReadMode();
+            this.isSaving.set(false);
+            // Actualizar la URL sin recargar el componente
+            this.router.navigate(
+              ['/director/events', created.internalId],
+              { replaceUrl: true, skipLocationChange: false },
+            );
+          },
+          error: (err: unknown) => {
+            console.error('Error al crear evento:', err);
+            this.error.set('No se pudo crear el evento. Por favor, intenta nuevamente.');
+            this.isSaving.set(false);
+          },
+        });
+      } else {
+        const id = ev!.id ?? ev!.internalId;
+        this.directorApi.updateEvent(id, payload).subscribe({
+          next: (updated) => {
+            this.event.set(updated);
+            this.isSaving.set(false);
+            this._restoreReadMode();
+          },
+          error: (err: unknown) => {
+            console.error('Error al guardar evento:', err);
+            this.error.set('No se pudieron guardar los cambios. Por favor, intenta nuevamente.');
+            this.isSaving.set(false);
+          },
+        });
+      }
     });
   }
 
@@ -344,10 +405,14 @@ export class EventDetailComponent implements OnInit {
       : (raw.eventDate ?? '');
     
     const originalEvent = this.event();
+    const internalId = this.isCreateMode()
+      ? (raw.internalId ? String(raw.internalId).trim() : '')
+      : (originalEvent?.internalId ?? raw.internalId ?? '');
+
     return {
       ...raw,
       id: originalEvent?.id,
-      internalId: originalEvent?.internalId,
+      internalId,
       eventDate,
       photos: (this.photosArray.getRawValue() as string[]).filter((u: string) => u.trim() !== ''),
     };
@@ -369,6 +434,7 @@ export class EventDetailComponent implements OnInit {
     }
 
     this.form.patchValue({
+      internalId:     ev.internalId ?? '',
       title:          ev.title,
       category:       ev.category,
       type:           ev.type ?? '',

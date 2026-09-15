@@ -1,6 +1,6 @@
 import { Injectable, inject } from '@angular/core';
 import { HttpClient, HttpHeaders } from '@angular/common/http';
-import { Observable, map, delay, switchMap } from 'rxjs';
+import { Observable, map, delay, switchMap, catchError } from 'rxjs';
 import { MsalService } from '@azure/msal-angular';
 import { environment } from '../../../../environments/environment';
 import { loginRequest } from '../../../../auth/loginRequest';
@@ -116,11 +116,12 @@ export class DirectorApiService {
       }
 
       return this.authService.acquireTokenSilent({ ...loginRequest, account }).pipe(
+        catchError(() =>
+          this.authService!.acquireTokenPopup(loginRequest),
+        ),
         switchMap((tokenResult) => {
-          // Se envía estrictamente el ID Token (tokenResult.idToken)
-          const token = tokenResult.idToken;
           const headers = new HttpHeaders({
-            Authorization: `Bearer ${token}`,
+            Authorization: `Bearer ${tokenResult.idToken}`,
           });
           return this.http.delete<void>(`${this.eventsApiUrl}/api/admin/events/${id}`, { headers });
         }),
@@ -161,13 +162,18 @@ export class DirectorApiService {
       }
 
       return this.authService.acquireTokenSilent({ ...loginRequest, account }).pipe(
+        catchError(() =>
+          this.authService!.acquireTokenPopup(loginRequest),
+        ),
         switchMap((tokenResult) => {
           const headers = new HttpHeaders({
             Authorization: `Bearer ${tokenResult.idToken}`,
           });
           return this.http
             .post<any>(`${this.eventsApiUrl}/api/admin/events`, payload, { headers })
-            .pipe(map(normalizeAthenetEvent));
+            .pipe(
+              delay(2000),
+              map(normalizeAthenetEvent));
         }),
       );
     }
@@ -192,6 +198,9 @@ export class DirectorApiService {
       }
 
       return this.authService.acquireTokenSilent({ ...loginRequest, account }).pipe(
+        catchError(() =>
+          this.authService!.acquireTokenPopup(loginRequest),
+        ),
         switchMap((tokenResult) => {
           const headers = new HttpHeaders({
             Authorization: `Bearer ${tokenResult.idToken}`,
@@ -200,8 +209,7 @@ export class DirectorApiService {
             .put<any>(`${this.eventsApiUrl}/api/admin/events/${id}`, payload, { headers })
             .pipe(
               delay(2000),
-              map(normalizeAthenetEvent
-              ));
+              map(normalizeAthenetEvent));
         }),
       );
     }

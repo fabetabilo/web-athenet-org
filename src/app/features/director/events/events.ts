@@ -241,6 +241,6 @@ export class DirectorEventsComponent implements OnInit {
   }
 
   onCreateEvent(): void {
-    console.log('Crear nuevo evento institucional');
+    this.router.navigate(['/director/events', 'new']);
   }
 }

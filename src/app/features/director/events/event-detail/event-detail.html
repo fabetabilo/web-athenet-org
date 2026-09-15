@@ -23,7 +23,7 @@
   }
 
   <!-- ── Contenido principal ───────────────────────────────────────────── -->
-  @if (event() && !loading()) {
+  @if ((event() || isCreateMode()) && !loading()) {
     <!-- Header de la página -->
     <div class="detail-header">
       <div class="detail-header-left">
@@ -38,16 +38,20 @@
         </button>
 
         <div class="event-meta">
-          <app-pill
-            [variant]="getStatusVariant(event()!.status)"
-            [dot]="true"
-          >
-            {{ getStatusLabel(event()!.status) }}
-          </app-pill>
-          <span class="event-id-badge">{{ event()!.internalId }}</span>
+          @if (!isCreateMode()) {
+            <app-pill
+              [variant]="getStatusVariant(event()!.status)"
+              [dot]="true"
+            >
+              {{ getStatusLabel(event()!.status) }}
+            </app-pill>
+            <span class="event-id-badge">{{ event()!.internalId }}</span>
+          } @else {
+            <app-pill variant="neutral" [dot]="true">Nuevo Evento</app-pill>
+          }
         </div>
 
-        <h1 class="event-title">{{ event()!.title }}</h1>
+        <h1 class="event-title">{{ isCreateMode() ? 'Crear Evento' : event()!.title }}</h1>
       </div>
     </div>
 
@@ -71,13 +75,13 @@
           Eliminar
         </app-button>
       } @else {
-        <!-- MODO EDICIÓN -->
+        <!-- MODO EDICIÓN / CREACIÓN -->
         <app-button
           variant="secondary"
           icon="close"
           (click)="onCancelEdit()"
           [disabled]="isSaving()"
-          aria-label="Cancelar edición"
+          aria-label="Cancelar"
         >
           Cancelar
         </app-button>
@@ -86,15 +90,15 @@
           icon="save"
           [loading]="isSaving()"
           (click)="onSave()"
-          aria-label="Guardar cambios"
+          [aria-label]="isCreateMode() ? 'Crear Evento' : 'Guardar cambios'"
         >
-          Guardar Cambios
+          {{ isCreateMode() ? 'Crear Evento' : 'Guardar Cambios' }}
         </app-button>
       }
     </div>
 
-    <!-- Banner de modo edición -->
-    @if (isEdit()) {
+    <!-- Banner de modo edición / creación -->
+    @if (isEdit() && !isCreateMode()) {
       <div class="edit-mode-banner">
         <mat-icon>edit_note</mat-icon>
         <span>Modo edición activo — los cambios no se guardarán hasta confirmar</span>
@@ -110,8 +114,31 @@
 
         <div class="form-row">
           <mat-form-field appearance="outline" class="field-full">
+            <mat-label>ID Interno</mat-label>
+            <input
+              matInput
+              formControlName="internalId"
+              id="field-internal-id"
+              placeholder="Ej. EVT-4"
+            />
+            @if (isCreateMode()) {
+              <mat-hint>Identificador único del evento (obligatorio)</mat-hint>
+            } @else {
+              <mat-hint>El ID interno no se puede modificar</mat-hint>
+            }
+            @if (form.get('internalId')?.hasError('required') && form.get('internalId')?.touched) {
+              <mat-error>El ID interno es obligatorio</mat-error>
+            }
+          </mat-form-field>
+        </div>
+
+        <div class="form-row">
+          <mat-form-field appearance="outline" class="field-full">
             <mat-label>Título del Evento</mat-label>
             <input matInput formControlName="title" id="field-title" />
+            @if (form.get('title')?.hasError('required') && form.get('title')?.touched) {
+              <mat-error>El título es obligatorio</mat-error>
+            }
           </mat-form-field>
         </div>
 
