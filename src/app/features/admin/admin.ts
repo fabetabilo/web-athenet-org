@@ -22,6 +22,9 @@ export class AdminDashboardComponent {
   protected readonly adminMenuItems: MenuItem[] = [
     { label: 'Dashboard', icon: 'dashboard', route: '/admin' },
     { label: 'Instituciones', icon: 'apartment', route: '/admin/instituciones' },
+    { label: 'Sedes', icon: 'location_city', route: '/admin/sedes' },
+    { label: 'Deportes', icon: 'sports_soccer', route: '/admin/deportes' },
+    { label: 'Equipos', icon: 'groups', route: '/admin/equipos' },
     { label: 'Usuarios', icon: 'group', route: '/admin/users' },
     { label: 'Reportes', icon: 'bar_chart', route: '/admin/reports' },
     { label: 'Configuración', icon: 'settings', route: '/admin/settings' },

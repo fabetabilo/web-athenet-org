@@ -1,10 +1,10 @@
-<div class="institucion-form-dialog">
+<div class="deporte-form-dialog">
   <div class="dialog-header">
     <div class="dialog-icon-wrapper variant-primary">
-      <mat-icon>{{ isEdit ? 'edit' : 'add_business' }}</mat-icon>
+      <mat-icon>{{ isEdit ? 'edit' : 'sports' }}</mat-icon>
     </div>
     <div class="dialog-header-text">
-      <h2 class="dialog-title">{{ isEdit ? 'Editar Institución' : 'Nueva Institución' }}</h2>
+      <h2 class="dialog-title">{{ isEdit ? 'Editar Deporte' : 'Nuevo Deporte' }}</h2>
     </div>
   </div>
 
@@ -16,7 +16,7 @@
         class="form-input"
         type="text"
         formControlName="nombre"
-        placeholder="Ej: Universidad de Chile"
+        placeholder="Ej: Básquetbol"
         [class.has-error]="form.controls.nombre.invalid && form.controls.nombre.touched"
       />
       @if (form.controls.nombre.invalid && form.controls.nombre.touched) {
@@ -24,47 +24,22 @@
           @if (form.controls.nombre.hasError('required')) {
             El nombre es obligatorio.
           } @else if (form.controls.nombre.hasError('maxlength')) {
-            El nombre no puede superar los 150 caracteres.
+            El nombre no puede superar los 100 caracteres.
           }
         </span>
       }
     </div>
 
     <div class="form-field">
-      <label class="form-label" for="sigla">Sigla</label>
-      <input
-        id="sigla"
-        class="form-input"
-        type="text"
-        formControlName="sigla"
-        placeholder="Ej: UCH"
-      />
+      <label class="form-label" for="descripcion">Descripción</label>
+      <textarea
+        id="descripcion"
+        class="form-input form-textarea"
+        formControlName="descripcion"
+        placeholder="Descripción breve del deporte (opcional)"
+        rows="3"
+      ></textarea>
     </div>
-
-    <div class="form-field">
-      <label class="form-label" for="imagenUrl">URL de imagen</label>
-      <input
-        id="imagenUrl"
-        class="form-input"
-        type="text"
-        formControlName="imagenUrl"
-        placeholder="https://..."
-      />
-    </div>
-
-    @if (isEdit) {
-      <div class="form-field">
-        <label class="form-label" for="activo">Estado</label>
-        <select
-          id="activo"
-          class="form-input form-select"
-          formControlName="activo"
-        >
-          <option [ngValue]="true">Activa</option>
-          <option [ngValue]="false">Inactiva</option>
-        </select>
-      </div>
-    }
 
     @if (error()) {
       <div class="form-error-banner">
@@ -89,7 +64,7 @@
       [loading]="guardando()"
       (btnClick)="onSubmit()"
     >
-      {{ isEdit ? 'Guardar cambios' : 'Crear institución' }}
+      {{ isEdit ? 'Guardar cambios' : 'Crear deporte' }}
     </app-button>
   </div>
 </div>

@@ -1,4 +1,4 @@
-.institucion-form-dialog {
+.equipo-form-dialog {
   display: flex;
   flex-direction: column;
   padding: var(--space-6);
@@ -6,7 +6,7 @@
   color: var(--color-text-body);
   font-family: var(--font-family-base);
   box-sizing: border-box;
-  min-width: 360px;
+  min-width: 400px;
 }
 
 .dialog-header {
@@ -57,6 +57,16 @@
   flex-direction: column;
   gap: var(--space-4);
   margin-bottom: var(--space-6);
+}
+
+.form-row {
+  display: flex;
+  gap: var(--space-3);
+
+  .form-field {
+    flex: 1;
+    min-width: 0;
+  }
 }
 
 .form-field {
