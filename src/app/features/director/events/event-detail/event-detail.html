@@ -1,0 +1,357 @@
+<div class="event-detail-page">
+
+  <!-- ── Estado: cargando ──────────────────────────────────────────────── -->
+  @if (loading()) {
+    <div class="detail-loading">
+      <div class="loading-spinner"></div>
+      <span>Cargando evento…</span>
+    </div>
+  }
+
+  <!-- ── Estado: error ─────────────────────────────────────────────────── -->
+  @if (error() && !loading()) {
+    <div class="error-banner">
+      <div class="error-content">
+        <mat-icon class="error-icon">error_outline</mat-icon>
+        <span class="error-text">{{ error() }}</span>
+      </div>
+      <button type="button" class="retry-btn" (click)="onBack()">
+        <mat-icon class="retry-icon">arrow_back</mat-icon>
+        Volver a la lista
+      </button>
+    </div>
+  }
+
+  <!-- ── Contenido principal ───────────────────────────────────────────── -->
+  @if ((event() || isCreateMode()) && !loading()) {
+    <!-- Header de la página -->
+    <div class="detail-header">
+      <div class="detail-header-left">
+        <button
+          type="button"
+          class="back-btn"
+          (click)="onBack()"
+          aria-label="Volver a la lista de eventos"
+        >
+          <mat-icon>arrow_back</mat-icon>
+          <span>Eventos</span>
+        </button>
+
+        <div class="event-meta">
+          @if (!isCreateMode()) {
+            <app-pill
+              [variant]="getStatusVariant(event()!.status)"
+              [dot]="true"
+            >
+              {{ getStatusLabel(event()!.status) }}
+            </app-pill>
+            <span class="event-id-badge">{{ event()!.internalId }}</span>
+          } @else {
+            <app-pill variant="neutral" [dot]="true">Nuevo Evento</app-pill>
+          }
+        </div>
+
+        <h1 class="event-title">{{ isCreateMode() ? 'Crear Evento' : event()!.title }}</h1>
+      </div>
+    </div>
+
+    <div class="table-toolbar">
+      @if (!isEdit()) {
+        <!-- MODO LECTURA -->
+        <app-button
+          variant="secondary"
+          icon="edit"
+          (click)="onEdit()"
+          aria-label="Editar evento"
+        >
+          Editar
+        </app-button>
+        <app-button
+          variant="danger"
+          icon="delete"
+          (click)="onDelete()"
+          aria-label="Eliminar evento"
+        >
+          Eliminar
+        </app-button>
+      } @else {
+        <!-- MODO EDICIÓN / CREACIÓN -->
+        <app-button
+          variant="secondary"
+          icon="close"
+          (click)="onCancelEdit()"
+          [disabled]="isSaving()"
+          aria-label="Cancelar"
+        >
+          Cancelar
+        </app-button>
+        <app-button
+          variant="primary"
+          icon="save"
+          [loading]="isSaving()"
+          (click)="onSave()"
+          [aria-label]="isCreateMode() ? 'Crear Evento' : 'Guardar cambios'"
+        >
+          {{ isCreateMode() ? 'Crear Evento' : 'Guardar Cambios' }}
+        </app-button>
+      }
+    </div>
+
+    <!-- Banner de modo edición / creación -->
+    @if (isEdit() && !isCreateMode()) {
+      <div class="edit-mode-banner">
+        <mat-icon>edit_note</mat-icon>
+        <span>Modo edición activo — los cambios no se guardarán hasta confirmar</span>
+      </div>
+    }
+
+    <!-- Formulario de detalle -->
+    <form [formGroup]="form" class="detail-form" autocomplete="off">
+
+      <!-- ── Sección: Información General ──────────────────────────────── -->
+      <section class="form-section">
+        <span class="section-title">Información General</span>
+
+        <div class="form-row">
+          <mat-form-field appearance="outline" class="field-full">
+            <mat-label>ID Interno</mat-label>
+            <input
+              matInput
+              formControlName="internalId"
+              id="field-internal-id"
+              placeholder="Ej. EVT-4"
+            />
+            @if (isCreateMode()) {
+              <mat-hint>Identificador único del evento (obligatorio)</mat-hint>
+            } @else {
+              <mat-hint>El ID interno no se puede modificar</mat-hint>
+            }
+            @if (form.get('internalId')?.hasError('required') && form.get('internalId')?.touched) {
+              <mat-error>El ID interno es obligatorio</mat-error>
+            }
+          </mat-form-field>
+        </div>
+
+        <div class="form-row">
+          <mat-form-field appearance="outline" class="field-full">
+            <mat-label>Título del Evento</mat-label>
+            <input matInput formControlName="title" id="field-title" />
+            @if (form.get('title')?.hasError('required') && form.get('title')?.touched) {
+              <mat-error>El título es obligatorio</mat-error>
+            }
+          </mat-form-field>
+        </div>
+
+        <div class="form-row two-col">
+          <mat-form-field appearance="outline">
+            <mat-label>Categoría</mat-label>
+            <mat-select formControlName="category" id="field-category">
+              @for (opt of categoryOptions; track opt.value) {
+                <mat-option [value]="opt.value">{{ opt.label }}</mat-option>
+              }
+            </mat-select>
+          </mat-form-field>
+
+          <mat-form-field appearance="outline">
+            <mat-label>Tipo de Evento</mat-label>
+            <mat-select formControlName="type" id="field-type">
+              @for (opt of typeOptions; track opt.value) {
+                <mat-option [value]="opt.value">{{ opt.label }}</mat-option>
+              }
+            </mat-select>
+          </mat-form-field>
+        </div>
+
+        <div class="form-row two-col">
+          <mat-form-field appearance="outline">
+            <mat-label>Fecha del Evento</mat-label>
+            <input
+              matInput
+              [matDatepicker]="eventDatePicker"
+              formControlName="eventDate"
+              id="field-event-date"
+            />
+            <mat-datepicker-toggle matIconSuffix [for]="eventDatePicker" />
+            <mat-datepicker #eventDatePicker />
+          </mat-form-field>
+
+          <mat-form-field appearance="outline">
+            <mat-label>Estado</mat-label>
+            <mat-select formControlName="status" id="field-status">
+              @for (opt of statusOptions; track opt.value) {
+                <mat-option [value]="opt.value">{{ opt.label }}</mat-option>
+              }
+            </mat-select>
+          </mat-form-field>
+        </div>
+
+        <div class="form-row two-col">
+          <mat-form-field appearance="outline">
+            <mat-label>Clasificación</mat-label>
+            <mat-select formControlName="isOfficial" id="field-is-official">
+              <mat-option [value]="true">Oficial</mat-option>
+              <mat-option [value]="false">Comunitario</mat-option>
+            </mat-select>
+          </mat-form-field>
+        </div>
+      </section>
+
+      <!-- ── Sección: Descripción ───────────────────────────────────────── -->
+      <section class="form-section">
+        <span class="section-title">Descripción</span>
+
+        <div class="form-row">
+          <mat-form-field appearance="outline" class="field-full">
+            <mat-label>Descripción breve</mat-label>
+            <textarea
+              matInput
+              formControlName="description"
+              id="field-description"
+              rows="3"
+            ></textarea>
+          </mat-form-field>
+        </div>
+
+        <div class="form-row">
+          <mat-form-field appearance="outline" class="field-full">
+            <mat-label>Descripción extendida</mat-label>
+            <textarea
+              matInput
+              formControlName="descriptionOpt"
+              id="field-description-opt"
+              rows="5"
+            ></textarea>
+          </mat-form-field>
+        </div>
+      </section>
+
+      <!-- ── Sección: Lugar ─────────────────────────────────────────────── -->
+      <section class="form-section">
+        <span class="section-title">Lugar</span>
+
+        <div class="form-row two-col">
+          <mat-form-field appearance="outline">
+            <mat-label>Ubicación</mat-label>
+            <mat-icon matPrefix>location_on</mat-icon>
+            <input matInput formControlName="location" id="field-location" />
+          </mat-form-field>
+
+          <mat-form-field appearance="outline">
+            <mat-label>Dirección</mat-label>
+            <mat-icon matPrefix>map</mat-icon>
+            <input matInput formControlName="address" id="field-address" />
+          </mat-form-field>
+        </div>
+      </section>
+
+      <!-- ── Sección: Medios ────────────────────────────────────────────── -->
+      <section class="form-section">
+        <span class="section-title">Medios</span>
+
+        <div class="form-row">
+          <mat-form-field appearance="outline" class="field-full">
+            <mat-label>URL de imagen de portada</mat-label>
+            <mat-icon matPrefix>image</mat-icon>
+            <input
+              matInput
+              formControlName="coverImage"
+              id="field-cover-image"
+              placeholder="https://…"
+            />
+            @if (form.get('coverImage')?.hasError('required') && form.get('coverImage')?.touched) {
+              <mat-error>La URL de imagen de portada es obligatoria</mat-error>
+            }
+          </mat-form-field>
+        </div>
+
+        @if (photosArray.length > 0 || isEdit()) {
+          <div class="photos-list" formArrayName="photos">
+            @if (photosArray.length > 0) {
+              <span class="photos-label">Fotos adicionales</span>
+            }
+            @for (ctrl of photosArray.controls; track $index) {
+              <div class="photo-row">
+                <mat-form-field appearance="outline" class="field-full">
+                  <mat-label>Foto {{ $index + 1 }}</mat-label>
+                  <mat-icon matPrefix>photo</mat-icon>
+                  <input
+                    matInput
+                    [formControlName]="$index"
+                    [id]="'field-photo-' + $index"
+                    placeholder="https://…"
+                  />
+                </mat-form-field>
+                @if (isEdit()) {
+                  <button
+                    type="button"
+                    class="photo-remove-btn"
+                    (click)="removePhoto($index)"
+                    [attr.aria-label]="'Quitar foto ' + ($index + 1)"
+                    title="Quitar foto"
+                  >
+                    <mat-icon>close</mat-icon>
+                  </button>
+                }
+              </div>
+            }
+          </div>
+        }
+
+        @if (photosArray.length === 0 && !isEdit()) {
+          <p class="photos-empty">Sin fotos adicionales</p>
+        }
+
+        @if (isEdit()) {
+          <button type="button" class="photo-add-btn" (click)="addPhoto()">
+            <mat-icon>add_photo_alternate</mat-icon>
+            Agregar foto
+          </button>
+        }
+      </section>
+
+      <!-- ── Sección: Datos Internos ────────────────────────────────────── -->
+      <section class="form-section">
+        <span class="section-title">Datos Internos</span>
+
+        <div class="form-row two-col">
+          <mat-form-field appearance="outline">
+            <mat-label>ID de Organización</mat-label>
+            <input
+              matInput
+              type="number"
+              formControlName="organizationId"
+              id="field-org-id"
+            />
+            @if (form.get('organizationId')?.hasError('required') && form.get('organizationId')?.touched) {
+              <mat-error>El ID de organización es obligatorio</mat-error>
+            }
+          </mat-form-field>
+
+          <mat-form-field appearance="outline">
+            <mat-label>ID Equipo 1</mat-label>
+            <input
+              matInput
+              type="number"
+              formControlName="teamOneId"
+              id="field-team-one-id"
+            />
+          </mat-form-field>
+        </div>
+
+        <div class="form-row two-col">
+          <mat-form-field appearance="outline">
+            <mat-label>ID Equipo 2</mat-label>
+            <input
+              matInput
+              type="number"
+              formControlName="teamTwoId"
+              id="field-team-two-id"
+            />
+          </mat-form-field>
+        </div>
+      </section>
+
+    </form>
+  }
+
+</div>

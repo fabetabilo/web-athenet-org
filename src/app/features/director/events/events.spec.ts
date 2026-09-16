@@ -2,6 +2,7 @@ import { ComponentFixture, TestBed } from '@angular/core/testing';
 import { of, throwError } from 'rxjs';
 import { provideAnimations } from '@angular/platform-browser/animations';
 import { MatDialog } from '@angular/material/dialog';
+import { Router } from '@angular/router';
 import { DirectorEventsComponent } from './events';
 import {
   DirectorApiService,
@@ -11,8 +12,9 @@ import {
 describe('DirectorEventsComponent', () => {
   let component: DirectorEventsComponent;
   let fixture: ComponentFixture<DirectorEventsComponent>;
-  let apiServiceMock: { getEvents: any; deleteEvent: any };
+  let apiServiceMock: { getAllAdminEvents: any; getEvents: any; deleteEvent: any };
   let dialogMock: { open: any };
+  let routerMock: { navigate: any };
 
   const mockEvents: AthenetEvent[] = [
     {
@@ -36,7 +38,12 @@ describe('DirectorEventsComponent', () => {
   ];
 
   beforeEach(async () => {
+    routerMock = {
+      navigate: vi.fn(),
+    };
+
     apiServiceMock = {
+      getAllAdminEvents: vi.fn().mockReturnValue(of(mockEvents)),
       getEvents: vi.fn().mockReturnValue(of(mockEvents)),
       deleteEvent: vi.fn().mockReturnValue(of(undefined)),
     };
@@ -51,6 +58,7 @@ describe('DirectorEventsComponent', () => {
       imports: [DirectorEventsComponent],
       providers: [
         provideAnimations(),
+        { provide: Router, useValue: routerMock },
         { provide: DirectorApiService, useValue: apiServiceMock },
         { provide: MatDialog, useValue: dialogMock },
       ],
@@ -60,23 +68,23 @@ describe('DirectorEventsComponent', () => {
     component = fixture.componentInstance;
   });
 
-  it('debe crearse y llamar a getEvents() al inicializar', () => {
+  it('debe crearse y llamar a getAllAdminEvents() al inicializar', () => {
     fixture.detectChanges();
     expect(component).toBeTruthy();
-    expect(apiServiceMock.getEvents).toHaveBeenCalledTimes(1);
+    expect(apiServiceMock.getAllAdminEvents).toHaveBeenCalledTimes(1);
     expect(component['events']().length).toBe(2);
     expect(component['loading']()).toBe(false);
     expect(component['error']()).toBeNull();
   });
 
-  it('debe renderizar filas en la tabla cuando getEvents() responde con éxito', () => {
+  it('debe renderizar filas en la tabla cuando getAllAdminEvents() responde con éxito', () => {
     fixture.detectChanges();
     const rows = fixture.nativeElement.querySelectorAll('.app-table-row');
     expect(rows.length).toBe(2);
   });
 
-  it('debe mostrar banner de error cuando getEvents() falla y permitir reintento', () => {
-    apiServiceMock.getEvents.mockReturnValue(
+  it('debe mostrar banner de error cuando getAllAdminEvents() falla y permitir reintento', () => {
+    apiServiceMock.getAllAdminEvents.mockReturnValue(
       throwError(() => new Error('Connection refused')),
     );
 
@@ -91,13 +99,13 @@ describe('DirectorEventsComponent', () => {
     expect(errorBanner.textContent).toContain('No se pudo conectar con el servidor');
 
     // Simula reintento exitoso
-    apiServiceMock.getEvents.mockReturnValue(of(mockEvents));
+    apiServiceMock.getAllAdminEvents.mockReturnValue(of(mockEvents));
     const retryBtn = fixture.nativeElement.querySelector('.retry-btn');
     expect(retryBtn).not.toBeNull();
     retryBtn.click();
     fixture.detectChanges();
 
-    expect(apiServiceMock.getEvents).toHaveBeenCalledTimes(2);
+    expect(apiServiceMock.getAllAdminEvents).toHaveBeenCalledTimes(2);
     expect(component['error']()).toBeNull();
     expect(component['events']().length).toBe(2);
   });

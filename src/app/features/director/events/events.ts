@@ -1,5 +1,6 @@
 import { Component, OnInit, inject, signal } from '@angular/core';
 import { CommonModule, DatePipe } from '@angular/common';
+import { Router } from '@angular/router';
 import { MatIconModule } from '@angular/material/icon';
 import { MatButtonModule } from '@angular/material/button';
 import { MatDialog } from '@angular/material/dialog';
@@ -38,6 +39,7 @@ import {
 export class DirectorEventsComponent implements OnInit {
   private readonly directorApi = inject(DirectorApiService);
   private readonly dialog = inject(MatDialog);
+  private readonly router = inject(Router);
 
   protected readonly columns: TableColumn<AthenetEvent>[] = [
     {
@@ -134,7 +136,7 @@ export class DirectorEventsComponent implements OnInit {
     this.loading.set(true);
     this.error.set(null);
 
-    this.directorApi.getEvents().subscribe({
+    this.directorApi.getAllAdminEvents().subscribe({
       next: (data) => {
         this.events.set(data);
         this.loading.set(false);
@@ -189,11 +191,13 @@ export class DirectorEventsComponent implements OnInit {
   }
 
   onRowClick(event: AthenetEvent): void {
-    console.log('Ver detalle del evento:', event);
+    this.router.navigate(['/director/events', event.internalId]);
   }
 
   onEdit(event: AthenetEvent): void {
-    console.log('Editar evento:', event);
+    this.router.navigate(['/director/events', event.internalId], {
+      queryParams: { mode: 'edit' },
+    });
   }
 
   onDelete(event: AthenetEvent): void {
@@ -237,6 +241,6 @@ export class DirectorEventsComponent implements OnInit {
   }
 
   onCreateEvent(): void {
-    console.log('Crear nuevo evento institucional');
+    this.router.navigate(['/director/events', 'new']);
   }
 }
