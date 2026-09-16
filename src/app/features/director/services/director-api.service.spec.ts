@@ -67,7 +67,7 @@ describe('DirectorApiService', () => {
       expect(result.internalId).toBe('EVT-SQL-9');
       expect(result.eventDate).toBe('2026-11-20');
       expect(result.isOfficial).toBe(true);
-      expect(result.description).toBe('Descripción detallada');
+      expect(result.descriptionOpt).toBe('Descripción detallada');
     });
 
     it('debe manejar objetos vacíos o nulos de forma segura', () => {
@@ -145,6 +145,34 @@ describe('DirectorApiService', () => {
       const req = httpTesting.expectOne(`${eventsApiUrl}/api/public/events`);
       req.flush('Error interno del servidor', { status: 500, statusText: 'Server Error' });
       expect(errorOccurred).toBe(true);
+    });
+  });
+
+  describe('getAllAdminEvents', () => {
+    it('debe realizar petición GET a /api/admin/events y retornar eventos normalizados (incluyendo borradores)', () => {
+      const mockBackendResponse = [
+        {
+          internal_id: 'EVT-1',
+          title: 'Evento Publicado',
+          status: 'PUBLISHED',
+        },
+        {
+          internal_id: 'EVT-2',
+          title: 'Evento Borrador',
+          status: 'DRAFT',
+        },
+      ];
+
+      service.getAllAdminEvents().subscribe((events) => {
+        expect(events.length).toBe(2);
+        expect(events[0].internalId).toBe('EVT-1');
+        expect(events[0].status).toBe('PUBLISHED');
+        expect(events[1].status).toBe('DRAFT');
+      });
+
+      const req = httpTesting.expectOne(`${eventsApiUrl}/api/admin/events`);
+      expect(req.request.method).toBe('GET');
+      req.flush(mockBackendResponse);
     });
   });
 

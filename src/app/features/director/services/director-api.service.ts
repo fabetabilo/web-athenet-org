@@ -101,6 +101,66 @@ export class DirectorApiService {
   }
 
   /**
+   * Obtiene todos los eventos institucionales (incluyendo DRAFT y CANCELLED) desde el backend.
+   * Endpoint protegido: GET /api/admin/events
+   * Si MSAL está configurado, adquiere silenciosamente el ID Token y lo envía como Bearer.
+   */
+  getAllAdminEvents(): Observable<AthenetEvent[]> {
+    const account =
+      this.authService?.instance.getActiveAccount() ??
+      this.authService?.instance.getAllAccounts()[0];
+
+    if (this.authService && account) {
+      if (!this.authService.instance.getActiveAccount()) {
+        this.authService.instance.setActiveAccount(account);
+      }
+
+      return this.authService.acquireTokenSilent({ ...loginRequest, account }).pipe(
+        catchError(() =>
+          this.authService!.acquireTokenPopup(loginRequest),
+        ),
+        switchMap((tokenResult) => {
+          const headers = new HttpHeaders({
+            Authorization: `Bearer ${tokenResult.idToken}`,
+          });
+          return this.http
+            .get<any[]>(`${this.eventsApiUrl}/api/admin/events`, { headers })
+            .pipe(
+              delay(5000),
+              map((response) => {
+                const items = Array.isArray(response)
+                  ? response
+                  : Array.isArray((response as any)?.content)
+                    ? (response as any).content
+                    : Array.isArray((response as any)?.data)
+                      ? (response as any).data
+                      : [];
+
+                return items.map(normalizeAthenetEvent);
+              }),
+            );
+        }),
+      );
+    }
+
+    return this.http
+      .get<any[]>(`${this.eventsApiUrl}/api/admin/events`)
+      .pipe(
+        map((response) => {
+          const items = Array.isArray(response)
+            ? response
+            : Array.isArray((response as any)?.content)
+              ? (response as any).content
+              : Array.isArray((response as any)?.data)
+                ? (response as any).data
+                : [];
+
+          return items.map(normalizeAthenetEvent);
+        }),
+      );
+  }
+
+  /**
    * Elimina un evento institucional en el backend.
    * Endpoint protegido: DELETE /api/admin/events/{id}
    * Si MSAL está configurado, adquiere silenciosamente el ID Token y lo envía como Bearer.

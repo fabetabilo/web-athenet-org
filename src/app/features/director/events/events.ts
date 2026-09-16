@@ -136,7 +136,7 @@ export class DirectorEventsComponent implements OnInit {
     this.loading.set(true);
     this.error.set(null);
 
-    this.directorApi.getEvents().subscribe({
+    this.directorApi.getAllAdminEvents().subscribe({
       next: (data) => {
         this.events.set(data);
         this.loading.set(false);
