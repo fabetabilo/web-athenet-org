@@ -1,0 +1,70 @@
+<div class="deporte-form-dialog">
+  <div class="dialog-header">
+    <div class="dialog-icon-wrapper variant-primary">
+      <mat-icon>{{ isEdit ? 'edit' : 'sports' }}</mat-icon>
+    </div>
+    <div class="dialog-header-text">
+      <h2 class="dialog-title">{{ isEdit ? 'Editar Deporte' : 'Nuevo Deporte' }}</h2>
+    </div>
+  </div>
+
+  <form class="dialog-body" [formGroup]="form" (ngSubmit)="onSubmit()">
+    <div class="form-field">
+      <label class="form-label" for="nombre">Nombre</label>
+      <input
+        id="nombre"
+        class="form-input"
+        type="text"
+        formControlName="nombre"
+        placeholder="Ej: Básquetbol"
+        [class.has-error]="form.controls.nombre.invalid && form.controls.nombre.touched"
+      />
+      @if (form.controls.nombre.invalid && form.controls.nombre.touched) {
+        <span class="form-error">
+          @if (form.controls.nombre.hasError('required')) {
+            El nombre es obligatorio.
+          } @else if (form.controls.nombre.hasError('maxlength')) {
+            El nombre no puede superar los 100 caracteres.
+          }
+        </span>
+      }
+    </div>
+
+    <div class="form-field">
+      <label class="form-label" for="descripcion">Descripción</label>
+      <textarea
+        id="descripcion"
+        class="form-input form-textarea"
+        formControlName="descripcion"
+        placeholder="Descripción breve del deporte (opcional)"
+        rows="3"
+      ></textarea>
+    </div>
+
+    @if (error()) {
+      <div class="form-error-banner">
+        <mat-icon class="form-error-banner-icon">error_outline</mat-icon>
+        <span>{{ error() }}</span>
+      </div>
+    }
+  </form>
+
+  <div class="dialog-actions">
+    <app-button
+      variant="secondary"
+      [disabled]="guardando()"
+      (btnClick)="onCancel()"
+    >
+      Cancelar
+    </app-button>
+
+    <app-button
+      variant="primary"
+      [icon]="isEdit ? 'save' : 'add'"
+      [loading]="guardando()"
+      (btnClick)="onSubmit()"
+    >
+      {{ isEdit ? 'Guardar cambios' : 'Crear deporte' }}
+    </app-button>
+  </div>
+</div>

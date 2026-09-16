@@ -1,0 +1,87 @@
+<div class="deportes-page">
+  <div class="dashboard-header">
+    <div class="header-info">
+      <span class="role-badge">Admin</span>
+      <h1>Deportes</h1>
+      <p class="welcome">Catálogo de deportes practicados en la plataforma</p>
+    </div>
+  </div>
+
+  @if (error()) {
+    <div class="error-banner">
+      <div class="error-content">
+        <mat-icon class="error-icon">error_outline</mat-icon>
+        <span class="error-text">{{ error() }}</span>
+      </div>
+      <button type="button" class="retry-btn" (click)="loadDeportes()">
+        <mat-icon class="retry-icon">refresh</mat-icon>
+        Reintentar
+      </button>
+    </div>
+  }
+
+  <div class="table-toolbar">
+    <div class="toolbar-search">
+      <mat-icon class="toolbar-search-icon">search</mat-icon>
+      <input
+        type="text"
+        class="toolbar-search-input"
+        placeholder="Buscar deporte..."
+        [value]="searchTerm()"
+        (input)="onSearchChange($any($event.target).value)"
+      />
+    </div>
+
+    <app-button variant="primary" icon="add" (click)="onCreateDeporte()">Nuevo Deporte</app-button>
+  </div>
+
+  <app-table
+    [columns]="columns"
+    [data]="deportes()"
+    [loading]="loading()"
+    emptyMessage="No hay deportes registrados"
+  >
+    <!-- Nombre -->
+    <ng-template tableCell="nombre" let-row>
+      <span class="deporte-nombre">{{ row.nombre }}</span>
+    </ng-template>
+
+    <!-- Descripción -->
+    <ng-template tableCell="descripcion" let-row>
+      <div class="descripcion-cell">
+        <span class="deporte-descripcion">{{ truncarDescripcion(row.descripcion) }}</span>
+        @if (esDescripcionLarga(row.descripcion)) {
+          <button type="button" class="ver-mas-btn" (click)="onVerDetalle(row)">
+            Ver más
+          </button>
+        }
+      </div>
+    </ng-template>
+
+    <!-- Acciones -->
+    <ng-template tableCell="actions" let-row>
+      <div class="actions-group">
+        <button
+          mat-icon-button
+          class="action-btn edit-btn"
+          type="button"
+          (click)="onEdit(row)"
+          title="Editar deporte"
+          aria-label="Editar deporte"
+        >
+          <mat-icon>edit</mat-icon>
+        </button>
+        <button
+          mat-icon-button
+          class="action-btn delete-btn"
+          type="button"
+          (click)="onDelete(row)"
+          title="Eliminar deporte"
+          aria-label="Eliminar deporte"
+        >
+          <mat-icon>delete</mat-icon>
+        </button>
+      </div>
+    </ng-template>
+  </app-table>
+</div>

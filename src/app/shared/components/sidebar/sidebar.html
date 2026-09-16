@@ -1,0 +1,38 @@
+<aside class="sidebar" [ngClass]="{ 'collapsed': isCollapsed() }">
+  <div class="sidebar-header">
+    <div class="logo-container">
+      <img src="athenet-light.png" alt="Athenet" class="logo-img" />
+    </div>
+    <button class="toggle-btn" (click)="toggleSidebar()" title="Alternar menú">
+      <mat-icon>menu</mat-icon>
+    </button>
+  </div>
+
+  <div class="user-profile">
+    <div class="avatar">{{ accountName().charAt(0).toUpperCase() }}</div>
+    <div class="user-info">
+      <span class="user-name">{{ accountName() }}</span>
+      <span class="user-role">{{ userRole() | titlecase }}</span>
+    </div>
+  </div>
+
+  <nav class="sidebar-nav">
+    <ul class="nav-list">
+      @for (item of menuItems(); track item.route) {
+        <li class="nav-item">
+          <a [routerLink]="item.route" routerLinkActive="active" [routerLinkActiveOptions]="{exact: true}" class="nav-link">
+            <mat-icon class="nav-icon">{{ item.icon }}</mat-icon>
+            <span class="nav-label">{{ item.label }}</span>
+          </a>
+        </li>
+      }
+    </ul>
+  </nav>
+
+  <div class="sidebar-footer">
+    <button class="logout-btn" (click)="logoutClick.emit()">
+      <mat-icon class="nav-icon">logout</mat-icon>
+      <span class="nav-label">Cerrar sesión</span>
+    </button>
+  </div>
+</aside>

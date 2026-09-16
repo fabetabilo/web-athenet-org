@@ -1,0 +1,5 @@
+// Este componente ahora es solo el "shell" del panel de admin: sidebar +
+// <router-outlet>. Las clases de layout (layout-wrapper, dashboard-content)
+// están en src/styles/_layout.scss (global). Los estilos del contenido de
+// cada sub-vista viven en su propio componente (home/home.scss,
+// instituciones/instituciones.scss, etc.).

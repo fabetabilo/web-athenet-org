@@ -1,0 +1,26 @@
+<button
+  mat-button
+  [type]="type()"
+  [disabled]="disabled() || loading()"
+  class="app-btn-inner"
+  [ngClass]="[
+    'variant-' + safeVariant,
+    'size-' + safeSize,
+    'icon-pos-' + iconPosition()
+  ]"
+  (click)="onButtonClick($event)"
+>
+  @if (loading()) {
+    <span class="btn-spinner" aria-hidden="true"></span>
+  } @else if (icon() && iconPosition() === 'start') {
+    <mat-icon class="btn-icon" aria-hidden="true">{{ icon() }}</mat-icon>
+  }
+
+  <span class="btn-content">
+    <ng-content></ng-content>
+  </span>
+
+  @if (!loading() && icon() && iconPosition() === 'end') {
+    <mat-icon class="btn-icon" aria-hidden="true">{{ icon() }}</mat-icon>
+  }
+</button>

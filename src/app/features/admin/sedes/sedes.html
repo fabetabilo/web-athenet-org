@@ -1,0 +1,90 @@
+<div class="sedes-page">
+  <div class="dashboard-header">
+    <div class="header-info">
+      <span class="role-badge">Admin</span>
+      <h1>Sedes</h1>
+      <p class="welcome">Registro y administración de sedes de las instituciones adscritas</p>
+    </div>
+  </div>
+
+  @if (error()) {
+    <div class="error-banner">
+      <div class="error-content">
+        <mat-icon class="error-icon">error_outline</mat-icon>
+        <span class="error-text">{{ error() }}</span>
+      </div>
+      <button type="button" class="retry-btn" (click)="loadSedes()">
+        <mat-icon class="retry-icon">refresh</mat-icon>
+        Reintentar
+      </button>
+    </div>
+  }
+
+  <div class="table-toolbar">
+    <div class="toolbar-search">
+      <mat-icon class="toolbar-search-icon">search</mat-icon>
+      <input
+        type="text"
+        class="toolbar-search-input"
+        placeholder="Buscar sede..."
+        [value]="searchTerm()"
+        (input)="onSearchChange($any($event.target).value)"
+      />
+    </div>
+
+    <app-button variant="primary" icon="add" (click)="onCreateSede()">Nueva Sede</app-button>
+  </div>
+
+  <app-table
+    [columns]="columns"
+    [data]="sedes()"
+    [loading]="loading()"
+    emptyMessage="No hay sedes registradas"
+  >
+    <!-- Nombre -->
+    <ng-template tableCell="nombre" let-row>
+      <span class="sede-nombre">{{ row.nombre }}</span>
+    </ng-template>
+
+    <!-- Institución -->
+    <ng-template tableCell="institucionNombre" let-row>
+      <span class="sede-institucion">{{ row.institucionNombre }}</span>
+    </ng-template>
+
+    <!-- Ciudad -->
+    <ng-template tableCell="ciudad" let-row>
+      <span class="sede-ciudad">{{ row.ciudad }}</span>
+    </ng-template>
+
+    <!-- Dirección -->
+    <ng-template tableCell="direccion" let-row>
+      <span class="sede-direccion">{{ row.direccion }}</span>
+    </ng-template>
+
+    <!-- Acciones -->
+    <ng-template tableCell="actions" let-row>
+      <div class="actions-group">
+        <button
+          mat-icon-button
+          class="action-btn edit-btn"
+          type="button"
+          (click)="onEdit(row)"
+          title="Editar sede"
+          aria-label="Editar sede"
+        >
+          <mat-icon>edit</mat-icon>
+        </button>
+        <button
+          mat-icon-button
+          class="action-btn delete-btn"
+          type="button"
+          (click)="onDelete(row)"
+          title="Eliminar sede"
+          aria-label="Eliminar sede"
+        >
+          <mat-icon>delete</mat-icon>
+        </button>
+      </div>
+    </ng-template>
+  </app-table>
+</div>

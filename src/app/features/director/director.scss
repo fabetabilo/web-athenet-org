@@ -1,0 +1,11 @@
+// ─── Director Dashboard Styles ────────────────────────────────────────────
+// Layout classes (layout-wrapper, dashboard-content, dashboard-header,
+// header-info, role-badge) are in src/styles/_layout.scss (global).
+
+:host {
+  display: block;
+  min-height: 100vh;
+  font-family: var(--font-family-base);
+}
+
+

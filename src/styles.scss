@@ -1,1 +1,22 @@
-/* You can add global styles to this file, and also import other style files */
+// Estilos globales
+// todas las reglas @use deben ir en primer lugar (saas requirement)
+@use '@angular/material' as mat;
+@use 'styles/tokens';
+@use 'styles/reset';
+@use 'styles/layout';
+@use 'styles/snackbar';
+
+// Angular Material M3 theme
+html {
+  height: 100%;
+  @include mat.theme(
+    (
+      color: (
+        primary: mat.$azure-palette,
+        tertiary: mat.$blue-palette,
+      ),
+      typography: Inter,
+      density: 0,
+    )
+  );
+}

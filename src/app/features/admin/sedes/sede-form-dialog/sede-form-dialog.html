@@ -1,0 +1,121 @@
+<div class="sede-form-dialog">
+  <div class="dialog-header">
+    <div class="dialog-icon-wrapper variant-primary">
+      <mat-icon>{{ isEdit ? 'edit' : 'add_location_alt' }}</mat-icon>
+    </div>
+    <div class="dialog-header-text">
+      <h2 class="dialog-title">{{ isEdit ? 'Editar Sede' : 'Nueva Sede' }}</h2>
+    </div>
+  </div>
+
+  <form class="dialog-body" [formGroup]="form" (ngSubmit)="onSubmit()">
+    <div class="form-field">
+      <label class="form-label" for="institucionId">Institución</label>
+      <select
+        id="institucionId"
+        class="form-input form-select"
+        formControlName="institucionId"
+        [class.has-error]="form.controls.institucionId.invalid && form.controls.institucionId.touched"
+      >
+        <option [ngValue]="null" disabled>
+          {{ cargandoInstituciones() ? 'Cargando instituciones...' : 'Selecciona una institución' }}
+        </option>
+        @for (institucion of instituciones(); track institucion.id) {
+          <option [ngValue]="institucion.id">{{ institucion.nombre }}</option>
+        }
+      </select>
+      @if (form.controls.institucionId.invalid && form.controls.institucionId.touched) {
+        <span class="form-error">Debes seleccionar una institución.</span>
+      }
+    </div>
+
+    <div class="form-field">
+      <label class="form-label" for="nombre">Nombre</label>
+      <input
+        id="nombre"
+        class="form-input"
+        type="text"
+        formControlName="nombre"
+        placeholder="Ej: Sede Central"
+        [class.has-error]="form.controls.nombre.invalid && form.controls.nombre.touched"
+      />
+      @if (form.controls.nombre.invalid && form.controls.nombre.touched) {
+        <span class="form-error">
+          @if (form.controls.nombre.hasError('required')) {
+            El nombre es obligatorio.
+          } @else if (form.controls.nombre.hasError('maxlength')) {
+            El nombre no puede superar los 100 caracteres.
+          }
+        </span>
+      }
+    </div>
+
+    <div class="form-field">
+      <label class="form-label" for="ciudad">Ciudad</label>
+      <input
+        id="ciudad"
+        class="form-input"
+        type="text"
+        formControlName="ciudad"
+        placeholder="Ej: Santiago"
+        [class.has-error]="form.controls.ciudad.invalid && form.controls.ciudad.touched"
+      />
+      @if (form.controls.ciudad.invalid && form.controls.ciudad.touched) {
+        <span class="form-error">
+          @if (form.controls.ciudad.hasError('required')) {
+            La ciudad es obligatoria.
+          } @else if (form.controls.ciudad.hasError('maxlength')) {
+            La ciudad no puede superar los 100 caracteres.
+          }
+        </span>
+      }
+    </div>
+
+    <div class="form-field">
+      <label class="form-label" for="direccion">Dirección</label>
+      <input
+        id="direccion"
+        class="form-input"
+        type="text"
+        formControlName="direccion"
+        placeholder="Ej: Av. Libertador Bernardo O'Higgins 1058"
+        [class.has-error]="form.controls.direccion.invalid && form.controls.direccion.touched"
+      />
+      @if (form.controls.direccion.invalid && form.controls.direccion.touched) {
+        <span class="form-error">
+          @if (form.controls.direccion.hasError('required')) {
+            La dirección es obligatoria.
+          } @else if (form.controls.direccion.hasError('maxlength')) {
+            La dirección no puede superar los 100 caracteres.
+          }
+        </span>
+      }
+    </div>
+
+    @if (error()) {
+      <div class="form-error-banner">
+        <mat-icon class="form-error-banner-icon">error_outline</mat-icon>
+        <span>{{ error() }}</span>
+      </div>
+    }
+  </form>
+
+  <div class="dialog-actions">
+    <app-button
+      variant="secondary"
+      [disabled]="guardando()"
+      (btnClick)="onCancel()"
+    >
+      Cancelar
+    </app-button>
+
+    <app-button
+      variant="primary"
+      [icon]="isEdit ? 'save' : 'add'"
+      [loading]="guardando()"
+      (btnClick)="onSubmit()"
+    >
+      {{ isEdit ? 'Guardar cambios' : 'Crear sede' }}
+    </app-button>
+  </div>
+</div>
