@@ -1,0 +1,160 @@
+<div class="equipo-form-dialog">
+  <div class="dialog-header">
+    <div class="dialog-icon-wrapper variant-primary">
+      <mat-icon>{{ isEdit ? 'edit' : 'groups' }}</mat-icon>
+    </div>
+    <div class="dialog-header-text">
+      <h2 class="dialog-title">{{ isEdit ? 'Editar Equipo' : 'Nuevo Equipo' }}</h2>
+    </div>
+  </div>
+
+  <form class="dialog-body" [formGroup]="form" (ngSubmit)="onSubmit()">
+    <div class="form-field">
+      <label class="form-label" for="institucionId">Institución</label>
+      <select
+        id="institucionId"
+        class="form-input form-select"
+        formControlName="institucionId"
+        (change)="onInstitucionChange()"
+        [class.has-error]="form.controls.institucionId.invalid && form.controls.institucionId.touched"
+      >
+        <option [ngValue]="null" disabled>
+          {{ cargandoOpciones() ? 'Cargando...' : 'Selecciona una institución' }}
+        </option>
+        @for (institucion of instituciones(); track institucion.id) {
+          <option [ngValue]="institucion.id">{{ institucion.nombre }}</option>
+        }
+      </select>
+      @if (form.controls.institucionId.invalid && form.controls.institucionId.touched) {
+        <span class="form-error">Debes seleccionar una institución.</span>
+      }
+    </div>
+
+    <div class="form-row">
+      <div class="form-field">
+        <label class="form-label" for="sedeId">Sede</label>
+        <select
+          id="sedeId"
+          class="form-input form-select"
+          formControlName="sedeId"
+          [class.has-error]="form.controls.sedeId.invalid && form.controls.sedeId.touched"
+        >
+          <option [ngValue]="null" disabled>{{ sedePlaceholder }}</option>
+          @for (sede of sedesFiltradas; track sede.id) {
+            <option [ngValue]="sede.id">{{ sede.nombre }}</option>
+          }
+        </select>
+        @if (form.controls.sedeId.invalid && form.controls.sedeId.touched) {
+          <span class="form-error">Debes seleccionar una sede.</span>
+        }
+      </div>
+
+      <div class="form-field">
+        <label class="form-label" for="deporteId">Deporte</label>
+        <select
+          id="deporteId"
+          class="form-input form-select"
+          formControlName="deporteId"
+          [class.has-error]="form.controls.deporteId.invalid && form.controls.deporteId.touched"
+        >
+          <option [ngValue]="null" disabled>
+            {{ cargandoOpciones() ? 'Cargando...' : 'Selecciona un deporte' }}
+          </option>
+          @for (deporte of deportes(); track deporte.id) {
+            <option [ngValue]="deporte.id">{{ deporte.nombre }}</option>
+          }
+        </select>
+        @if (form.controls.deporteId.invalid && form.controls.deporteId.touched) {
+          <span class="form-error">Debes seleccionar un deporte.</span>
+        }
+      </div>
+    </div>
+
+    <div class="form-field">
+      <label class="form-label" for="nombre">Nombre</label>
+      <input
+        id="nombre"
+        class="form-input"
+        type="text"
+        formControlName="nombre"
+        placeholder="Ej: Primer equipo Básquetbol Varones"
+        [class.has-error]="form.controls.nombre.invalid && form.controls.nombre.touched"
+      />
+      @if (form.controls.nombre.invalid && form.controls.nombre.touched) {
+        <span class="form-error">
+          @if (form.controls.nombre.hasError('required')) {
+            El nombre es obligatorio.
+          } @else if (form.controls.nombre.hasError('maxlength')) {
+            El nombre no puede superar los 150 caracteres.
+          }
+        </span>
+      }
+    </div>
+
+    <div class="form-field">
+      <label class="form-label" for="categoria">Categoría</label>
+      <select
+        id="categoria"
+        class="form-input form-select"
+        formControlName="categoria"
+        [class.has-error]="form.controls.categoria.invalid && form.controls.categoria.touched"
+      >
+        <option [ngValue]="null" disabled>Selecciona una categoría</option>
+        @for (opcion of categoriaOptions; track opcion.value) {
+          <option [ngValue]="opcion.value">{{ opcion.label }}</option>
+        }
+      </select>
+      @if (form.controls.categoria.invalid && form.controls.categoria.touched) {
+        <span class="form-error">Debes seleccionar una categoría.</span>
+      }
+    </div>
+
+    <div class="form-field">
+      <label class="form-label" for="entrenador">Entrenador</label>
+      <input
+        id="entrenador"
+        class="form-input"
+        type="text"
+        formControlName="entrenador"
+        placeholder="Nombre del entrenador (opcional)"
+      />
+    </div>
+
+    <div class="form-field">
+      <label class="form-label" for="logoUrl">URL del logo</label>
+      <input
+        id="logoUrl"
+        class="form-input"
+        type="text"
+        formControlName="logoUrl"
+        placeholder="https://... (opcional)"
+      />
+    </div>
+
+    @if (error()) {
+      <div class="form-error-banner">
+        <mat-icon class="form-error-banner-icon">error_outline</mat-icon>
+        <span>{{ error() }}</span>
+      </div>
+    }
+  </form>
+
+  <div class="dialog-actions">
+    <app-button
+      variant="secondary"
+      [disabled]="guardando()"
+      (btnClick)="onCancel()"
+    >
+      Cancelar
+    </app-button>
+
+    <app-button
+      variant="primary"
+      [icon]="isEdit ? 'save' : 'add'"
+      [loading]="guardando()"
+      (btnClick)="onSubmit()"
+    >
+      {{ isEdit ? 'Guardar cambios' : 'Crear equipo' }}
+    </app-button>
+  </div>
+</div>

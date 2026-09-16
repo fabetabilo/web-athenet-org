@@ -18,7 +18,7 @@ export interface Institucion {
 }
 
 /** Payload para crear/actualizar (sin id, que lo genera el backend) */
-export type InstitucionInput = Omit<Institucion, 'id' | 'activo'>;
+export type InstitucionInput = Omit<Institucion, 'id'>;
 
 @Injectable({ providedIn: 'root' })
 export class InstitucionApiService {

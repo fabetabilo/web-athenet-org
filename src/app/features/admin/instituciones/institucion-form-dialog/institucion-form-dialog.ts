@@ -37,6 +37,9 @@ export class InstitucionFormDialogComponent {
     ],
     sigla: [this.data.institucion?.sigla ?? ''],
     imagenUrl: [this.data.institucion?.imagenUrl ?? ''],
+    // Nueva institución siempre parte activa; en edición se precarga el
+    // estado real y queda disponible para cambiarlo.
+    activo: [this.data.institucion?.activo ?? true],
   });
 
   /** Progreso de la petición al backend: bloquea los botones y muestra el spinner. */
@@ -63,6 +66,7 @@ export class InstitucionFormDialogComponent {
       nombre: raw.nombre.trim(),
       sigla: raw.sigla.trim() || null,
       imagenUrl: raw.imagenUrl.trim() || null,
+      activo: raw.activo,
     };
 
     this.guardando.set(true);

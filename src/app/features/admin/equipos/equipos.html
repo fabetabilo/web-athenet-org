@@ -1,0 +1,95 @@
+<div class="equipos-page">
+  <div class="dashboard-header">
+    <div class="header-info">
+      <span class="role-badge">Admin</span>
+      <h1>Equipos</h1>
+      <p class="welcome">Registro y administración de equipos deportivos por sede</p>
+    </div>
+  </div>
+
+  @if (error()) {
+    <div class="error-banner">
+      <div class="error-content">
+        <mat-icon class="error-icon">error_outline</mat-icon>
+        <span class="error-text">{{ error() }}</span>
+      </div>
+      <button type="button" class="retry-btn" (click)="loadEquipos()">
+        <mat-icon class="retry-icon">refresh</mat-icon>
+        Reintentar
+      </button>
+    </div>
+  }
+
+  <div class="table-toolbar">
+    <div class="toolbar-search">
+      <mat-icon class="toolbar-search-icon">search</mat-icon>
+      <input
+        type="text"
+        class="toolbar-search-input"
+        placeholder="Buscar equipo..."
+        [value]="searchTerm()"
+        (input)="onSearchChange($any($event.target).value)"
+      />
+    </div>
+
+    <app-button variant="primary" icon="add" (click)="onCreateEquipo()">Nuevo Equipo</app-button>
+  </div>
+
+  <app-table
+    [columns]="columns"
+    [data]="equipos()"
+    [loading]="loading()"
+    emptyMessage="No hay equipos registrados"
+  >
+    <!-- Nombre -->
+    <ng-template tableCell="nombre" let-row>
+      <span class="equipo-nombre">{{ row.nombre }}</span>
+    </ng-template>
+
+    <!-- Categoría -->
+    <ng-template tableCell="categoria" let-row>
+      <app-pill variant="info">{{ getCategoriaLabel(row.categoria) }}</app-pill>
+    </ng-template>
+
+    <!-- Deporte -->
+    <ng-template tableCell="deporteNombre" let-row>
+      <span class="equipo-deporte">{{ row.deporteNombre }}</span>
+    </ng-template>
+
+    <!-- Sede -->
+    <ng-template tableCell="sedeNombre" let-row>
+      <span class="equipo-sede">{{ row.sedeNombre }}</span>
+    </ng-template>
+
+    <!-- Entrenador -->
+    <ng-template tableCell="entrenador" let-row>
+      <span class="equipo-entrenador">{{ row.entrenador || '—' }}</span>
+    </ng-template>
+
+    <!-- Acciones -->
+    <ng-template tableCell="actions" let-row>
+      <div class="actions-group">
+        <button
+          mat-icon-button
+          class="action-btn edit-btn"
+          type="button"
+          (click)="onEdit(row)"
+          title="Editar equipo"
+          aria-label="Editar equipo"
+        >
+          <mat-icon>edit</mat-icon>
+        </button>
+        <button
+          mat-icon-button
+          class="action-btn delete-btn"
+          type="button"
+          (click)="onDelete(row)"
+          title="Eliminar equipo"
+          aria-label="Eliminar equipo"
+        >
+          <mat-icon>delete</mat-icon>
+        </button>
+      </div>
+    </ng-template>
+  </app-table>
+</div>
