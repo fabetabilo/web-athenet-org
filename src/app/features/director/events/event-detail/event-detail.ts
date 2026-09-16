@@ -125,9 +125,9 @@ export class EventDetailComponent implements OnInit {
       address:         [{ value: '', disabled: true }],
       description:     [{ value: '', disabled: true }],
       descriptionOpt:  [{ value: '', disabled: true }],
-      coverImage:      [{ value: '', disabled: true }],
+      coverImage:      [{ value: '', disabled: true }, Validators.required],
       photos:          this.fb.array([]),
-      organizationId:  [{ value: null, disabled: true }],
+      organizationId:  [{ value: null, disabled: true }, Validators.required],
       teamOneId:       [{ value: null, disabled: true }],
       teamTwoId:       [{ value: null, disabled: true }],
     });

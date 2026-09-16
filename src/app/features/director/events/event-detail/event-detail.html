@@ -258,6 +258,9 @@
               id="field-cover-image"
               placeholder="https://…"
             />
+            @if (form.get('coverImage')?.hasError('required') && form.get('coverImage')?.touched) {
+              <mat-error>La URL de imagen de portada es obligatoria</mat-error>
+            }
           </mat-form-field>
         </div>
 
@@ -319,6 +322,9 @@
               formControlName="organizationId"
               id="field-org-id"
             />
+            @if (form.get('organizationId')?.hasError('required') && form.get('organizationId')?.touched) {
+              <mat-error>El ID de organización es obligatorio</mat-error>
+            }
           </mat-form-field>
 
           <mat-form-field appearance="outline">
