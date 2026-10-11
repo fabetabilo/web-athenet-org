@@ -1,5 +1,7 @@
 import type { SilentRequest } from '@azure/msal-browser'
 
+export const GRAPH_BASE_URL = 'https://graph.microsoft.com/v1.0';
+
 /**
  * Scopes de Microsoft Graph para la vista de usuarios (`/admin/users`). Por ahora, son permisos de lectura: listan el directorio y el
  * catálogo de app roles del service principal.

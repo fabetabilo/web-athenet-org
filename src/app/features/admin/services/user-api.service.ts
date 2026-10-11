@@ -4,7 +4,7 @@ import { Observable, forkJoin, map, switchMap, throwError } from 'rxjs';
 import { MsalService } from '@azure/msal-angular';
 import { InteractionRequiredAuthError, InteractionRequiredAuthErrorCodes, } from '@azure/msal-browser';
 import { environment } from '../../../../environments/environment';
-import { graphRequest } from '../../../../auth/graphRequest';
+import { GRAPH_BASE_URL, graphRequest } from '../../../../auth/graphRequest';
 
 /**
  * Código de un app role: el `value` del manifest, que es el string que viaja
@@ -195,10 +195,7 @@ export function esErrorDeConsentimiento(err: unknown): boolean {
 export class UserApiService {
   private readonly http = inject(HttpClient);
   private readonly authService = inject(MsalService, { optional: true });
-
-  private readonly graphUrl = (
-    environment.graphApiUrl ?? 'https://graph.microsoft.com/v1.0'
-  ).replace(/\/+$/, '');
+  private readonly graphUrl = GRAPH_BASE_URL;
 
   /** El service principal se direcciona por `appId` (el client id que ya está en el entorno), así no hay que hardcodear ni resolver un segundo GUID */
   private readonly servicePrincipalUrl = `${this.graphUrl}/servicePrincipals(appId='${environment.clientId}')`;
