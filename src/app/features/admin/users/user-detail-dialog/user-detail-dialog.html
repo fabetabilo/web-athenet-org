@@ -1,0 +1,60 @@
+<div class="user-detail-dialog">
+  <div class="dialog-header">
+    <div class="dialog-icon-wrapper variant-primary">
+      <mat-icon>person</mat-icon>
+    </div>
+    <div class="dialog-header-text">
+      <h2 class="dialog-title">{{ user.displayName }}</h2>
+      <span class="dialog-subtitle">{{ user.userPrincipalName }}</span>
+    </div>
+  </div>
+
+  <div class="dialog-body">
+    <div class="detail-grid">
+      <div class="detail-field">
+        <span class="detail-label">Correo</span>
+        <span class="detail-value">{{ user.mail || '—' }}</span>
+      </div>
+
+      <div class="detail-field">
+        <span class="detail-label">Estado de la cuenta</span>
+        <span class="detail-value">
+          @if (user.accountEnabled) {
+            <app-pill variant="success" [dot]="true">Habilitada</app-pill>
+          } @else {
+            <app-pill variant="neutral" [dot]="true">Deshabilitada</app-pill>
+          }
+        </span>
+      </div>
+    </div>
+
+    <div class="detail-field">
+      <span class="detail-label">Roles en Athenet</span>
+
+      @if (rolesAsignados.length === 0) {
+        <div class="roles-empty">
+          <app-pill variant="warning" [dot]="true">Sin rol asignado</app-pill>
+          <p class="roles-empty-text">
+            Esta cuenta puede autenticarse pero no tiene acceso a ningún módulo de la plataforma.
+          </p>
+        </div>
+      } @else {
+        <ul class="roles-list">
+          @for (rol of rolesAsignados; track rol.code) {
+            <li class="role-item">
+              <mat-icon class="role-icon">{{ getRoleIcon(rol.code) }}</mat-icon>
+              <div class="role-text">
+                <span class="role-name">{{ rol.displayName }}</span>
+                <span class="role-description">{{ rol.description }}</span>
+              </div>
+            </li>
+          }
+        </ul>
+      }
+    </div>
+  </div>
+
+  <div class="dialog-actions">
+    <app-button variant="secondary" (btnClick)="onClose()">Cerrar</app-button>
+  </div>
+</div>

@@ -10,6 +10,7 @@ Tabla de datos genérica, componible y resiliente ante APIs asíncronas basada e
 * **Propiedades anidadas:** Soporte nativo para notación de punto (`key: 'categoria.nombre'`) en celdas por defecto, ordenamiento y filtrado.
 * **Ordenamiento:** Integración con `MatSort` (`sortable: true`) con soporte para cadenas, números, fechas y booleanos.
 * **Filtros en cabecera:** Menús desplegables (`mat-menu`) con búsqueda por texto (tolerante a tildes y mayúsculas) o selección de opciones fijas o auto-deducidas.
+* **Celdas multivalor:** Columnas cuyo valor es un arreglo (ej. `roles: string[]`) filtran por coincidencia de cualquiera de sus elementos, y la sentinela `EMPTY_FILTER_VALUE` selecciona las filas sin valor.
 * **Proyección de celdas:** Renderizado personalizado mediante directiva `[tableCell]`. Fallback automático a texto plano.
 * **Estado de Carga (`loading`):** Barra de progreso indeterminada y spinner de carga sin parpadeos de estados vacíos falsos.
 * **Estados Vacíos Diferenciados:**
@@ -206,6 +207,35 @@ export class EventosComponent implements OnInit {
   </ng-template>
 </app-table>
 ```
+
+---
+
+## Celdas Multivalor y Filas sin Valor
+
+Una columna puede apuntar a un arreglo (ej. `roles: ['director', 'delegate']`). El filtrado las trata como **lista de candidatos**:
+
+* `filterType: 'select'` coincide si **algún** elemento es igual al valor filtrado (un usuario con dos roles aparece al filtrar por cualquiera de ellos).
+* `filterType: 'text'` coincide si **algún** elemento contiene el texto buscado, con la misma tolerancia a tildes y mayúsculas.
+* `getSelectOptions()` aplana los arreglos al auto-deducir las opciones, por lo que el menú ofrece valores individuales, no la concatenación del arreglo.
+
+Para filtrar justamente las filas **sin valor** en la columna (arreglo vacío, `null` o cadena vacía) —normalmente las accionables— se usa la sentinela exportada `EMPTY_FILTER_VALUE`, que complementa a `'ALL'` (que significa *sin filtro*):
+
+```typescript
+import { EMPTY_FILTER_VALUE, type TableColumn } from '../../../shared/components/table/table';
+
+{
+  key: 'roles',
+  header: 'Roles en Athenet',
+  filterable: true,
+  filterType: 'select',
+  filterOptions: [
+    ...this.roles().map((rol) => ({ label: rol.displayName, value: rol.code })),
+    { label: 'Sin rol asignado', value: EMPTY_FILTER_VALUE },
+  ],
+}
+```
+
+> Ejemplo real: la columna *Roles en Athenet* de `/admin/users` (`features/admin/users/users.ts`), cuyas opciones se derivan del catálogo de roles del adaptador de identidad en vez de constantes locales.
 
 ---
 

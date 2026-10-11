@@ -1,18 +1,20 @@
 import { Component, inject } from '@angular/core'
 import { MsalService } from '@azure/msal-angular'
 import { RouterOutlet } from '@angular/router'
-import { environment } from '../../../environments/environment'
 import { SidebarComponent, type MenuItem } from '../../shared/components/sidebar/sidebar'
+import { TopbarComponent } from '../../shared/components/topbar/topbar'
+import { SessionService } from '../../shared/services/session.service'
 
 @Component({
   selector: 'app-admin-dashboard',
   standalone: true,
-  imports: [SidebarComponent, RouterOutlet],
+  imports: [SidebarComponent, TopbarComponent, RouterOutlet],
   templateUrl: './admin.html',
   styleUrl: './admin.scss',
 })
 export class AdminDashboardComponent {
   private readonly authService = inject(MsalService, { optional: true })
+  private readonly session = inject(SessionService)
 
   protected readonly accountName =
     this.authService?.instance.getActiveAccount()?.name ?? 'Admin'
@@ -30,16 +32,8 @@ export class AdminDashboardComponent {
     { label: 'Configuración', icon: 'settings', route: '/admin/settings' },
   ]
 
+  /** El cierre de sesión vive en SessionService: es el mismo para los dos shells. */
   logout(): void {
-    // Guardar referencia antes de limpiar, para que MSAL sepa qué sesión cerrar
-    const account = this.authService?.instance.getActiveAccount()
-    // Limpiar cuenta activa para evitar estado residual en LocalStorage
-    this.authService?.instance.setActiveAccount(null)
-    this.authService
-      ?.logoutRedirect({
-        postLogoutRedirectUri: environment.redirectUri,
-        account: account ?? undefined,
-      })
-      .subscribe()
+    this.session.logout()
   }
 }

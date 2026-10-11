@@ -6,6 +6,7 @@ import { InstitucionesComponent } from './features/admin/instituciones/instituci
 import { SedesComponent } from './features/admin/sedes/sedes'
 import { DeportesComponent } from './features/admin/deportes/deportes'
 import { EquiposComponent } from './features/admin/equipos/equipos'
+import { UsersComponent } from './features/admin/users/users'
 import { DirectorComponent } from './features/director/director'
 import { DirectorHomeComponent } from './features/director/home/home'
 import { DirectorEventsComponent } from './features/director/events/events'
@@ -29,6 +30,7 @@ export const routes: Routes = [
       { path: 'sedes', component: SedesComponent },
       { path: 'deportes', component: DeportesComponent },
       { path: 'equipos', component: EquiposComponent },
+      { path: 'users', component: UsersComponent },
     ]
   },
 

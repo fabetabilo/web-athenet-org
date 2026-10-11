@@ -1,0 +1,86 @@
+<div class="users-page">
+  <div class="dashboard-header">
+    <div class="header-info">
+      <span class="role-badge">Admin</span>
+      <h1>Usuarios</h1>
+      <p class="welcome">Directorio del tenant y roles asignados en la plataforma</p>
+    </div>
+  </div>
+
+  <div class="info-banner">
+    <mat-icon>info_outline</mat-icon>
+    <span>
+      La asignación de roles se gestiona en Microsoft Entra ID. Esta vista refleja el estado actual
+      del directorio.
+    </span>
+  </div>
+
+  @if (error()) {
+    <div class="error-banner">
+      <div class="error-content">
+        <mat-icon class="error-icon">error_outline</mat-icon>
+        <span class="error-text">{{ error() }}</span>
+      </div>
+      <button type="button" class="retry-btn" (click)="loadDirectory()">
+        <mat-icon class="retry-icon">refresh</mat-icon>
+        Reintentar
+      </button>
+    </div>
+  }
+
+  <div class="table-toolbar">
+    <div class="toolbar-search">
+      <mat-icon class="toolbar-search-icon">search</mat-icon>
+      <input
+        type="text"
+        class="toolbar-search-input"
+        placeholder="Buscar usuario..."
+        [value]="searchTerm()"
+        (input)="onSearchChange($any($event.target).value)"
+      />
+    </div>
+  </div>
+
+  <app-table
+    [columns]="columns()"
+    [data]="users()"
+    [loading]="loading()"
+    emptyMessage="No hay usuarios en el directorio"
+    [clickableRows]="true"
+    (rowClick)="onVerDetalle($event)"
+  >
+    <!-- Nombre -->
+    <ng-template tableCell="displayName" let-row>
+      <span class="user-name">{{ row.displayName }}</span>
+    </ng-template>
+
+    <!-- Cuenta -->
+    <ng-template tableCell="userPrincipalName" let-row>
+      <span class="user-account">{{ row.userPrincipalName }}</span>
+    </ng-template>
+
+    <!-- Roles en Athenet -->
+    <ng-template tableCell="roles" let-row>
+      @if (rolesDe(row).length === 0) {
+        <app-pill variant="warning" [dot]="true">Sin rol asignado</app-pill>
+      } @else {
+        <div class="roles-group">
+          @for (code of rolesDe(row); track code) {
+            <app-pill variant="neutral" [icon]="getRoleIcon(code)">
+              {{ getRoleLabel(code) }}
+            </app-pill>
+          }
+        </div>
+      }
+    </ng-template>
+
+    <!-- Estado de la cuenta -->
+    <ng-template tableCell="accountEnabled" let-row>
+      @if (row.accountEnabled) {
+        <app-pill variant="success" [dot]="true">Habilitada</app-pill>
+      } @else {
+        <app-pill variant="neutral" [dot]="true">Deshabilitada</app-pill>
+      }
+    </ng-template>
+  </app-table>
+</div>

@@ -1,0 +1,17 @@
+<div
+  class="session-timer"
+  [class.is-warning]="isWarning()"
+  [class.is-critical]="isCritical()">
+  <mat-icon class="timer-icon">schedule</mat-icon>
+  <span class="timer-label">Sesión</span>
+  <!-- aria-live="off": un número que se anuncia cada segundo hace inusable un lector de pantalla. El aviso llega por el diálogo, que sí es anunciable. -->
+  <span class="timer-value" aria-live="off">{{ display() }}</span>
+  <button
+    type="button"
+    class="timer-renew"
+    title="Renovar sesión"
+    aria-label="Renovar sesión"
+    (click)="renovar()">
+    <mat-icon>refresh</mat-icon>
+  </button>
+</div>

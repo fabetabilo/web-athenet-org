@@ -1,0 +1,35 @@
+// Barra superior compartida
+// Ocupa solo el ancho del area de contenido: no cruza por encima del sidebar.
+:host {
+  display: block;
+  flex: 0 0 auto;
+}
+
+.topbar {
+  height: var(--topbar-height);
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--space-4);
+  padding: 0 var(--space-6);
+  background: var(--topbar-bg);
+  border-bottom: 1px solid var(--topbar-border);
+  color: var(--topbar-text);
+  font-family: var(--font-family-base);
+}
+
+.topbar-left {
+  display: flex;
+  align-items: center;
+  gap: var(--space-3);
+  min-width: 0;
+  overflow: hidden;
+}
+
+.topbar-right {
+  display: flex;
+  align-items: center;
+  gap: var(--space-3);
+  margin-left: auto;
+  flex-shrink: 0;
+}
