@@ -5,6 +5,18 @@
   width: 100%;
 }
 
+// Columna a la derecha del sidebar: topbar fija arriba y el contenido debajo.
+.layout-main {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  // Imprescindible: sin esto .dashboard-content no puede encogerse por debajo
+  // de su contenido y el scroll se va a la página completa en vez del área de
+  // contenido.
+  min-height: 0;
+  min-width: 0;
+}
+
 .dashboard-content {
   flex: 1;
   overflow-y: auto;

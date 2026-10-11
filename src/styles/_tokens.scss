@@ -55,6 +55,15 @@
   --sidebar-width-collapsed: 80px;
   --sidebar-border:          rgba(255, 255, 255, 0.05);
 
+  // ── Topbar ──
+  // Derivados de los del sidebar: si alguien cambia la paleta, la barra
+  // superior mantiene la continuidad visual sola.
+  --topbar-height:      32px;
+  --topbar-bg:          var(--sidebar-bg);
+  --topbar-border:      var(--sidebar-border);
+  --topbar-text:        var(--sidebar-text);
+  --topbar-text-strong: var(--sidebar-text-active);
+
   // ── Typography ──
   --font-family-base: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
   --font-family-mono: ui-monospace, 'Cascadia Code', 'SF Mono', Menlo, monospace;
