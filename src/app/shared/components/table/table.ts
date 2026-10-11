@@ -65,6 +65,14 @@ export function normalizeFilterText(value: any): string {
     .trim();
 }
 
+/**
+ * Valor reservado para el filtro de una columna: selecciona las filas **sin
+ * valor** en esa columna (arreglo vacío, null o cadena vacía), que suelen ser
+ * las accionables (ej. usuarios sin rol asignado). Complementa a `'ALL'`, que
+ * significa "sin filtro".
+ */
+export const EMPTY_FILTER_VALUE = '__EMPTY__';
+
 @Component({
   selector: 'app-table',
   standalone: true,
@@ -154,19 +162,31 @@ export class TableComponent<T = any> {
             continue;
           }
           const cellVal = getDeepValue(row, key);
-          if (cellVal === undefined || cellVal === null) {
+
+          // Celdas multivalor (ej. `roles: string[]`) se tratan como lista de candidatos: basta con que uno coincida.
+          const cellValues = Array.isArray(cellVal) ? cellVal : [cellVal];
+          const isEmptyCell =
+            cellValues.length === 0 ||
+            cellValues.every(v => v === undefined || v === null || v === '');
+
+          if (String(filterVal) === EMPTY_FILTER_VALUE) {
+            if (!isEmptyCell) return false;
+            continue;
+          }
+
+          if (isEmptyCell) {
             return false;
           }
 
           const col = this.columns().find(c => c.key === key);
           if (col?.filterType === 'select') {
-            if (String(cellVal).toLowerCase() !== String(filterVal).toLowerCase()) {
+            const target = String(filterVal).toLowerCase();
+            if (!cellValues.some(v => String(v).toLowerCase() === target)) {
               return false;
             }
           } else {
-            const normCell = normalizeFilterText(cellVal);
             const normFilter = normalizeFilterText(filterVal);
-            if (!normCell.includes(normFilter)) {
+            if (!cellValues.some(v => normalizeFilterText(v).includes(normFilter))) {
               return false;
             }
           }
@@ -221,7 +241,12 @@ export class TableComponent<T = any> {
     }
 
     const uniqueValues = Array.from(
-      new Set(rawData.map((row: any) => getDeepValue(row, col.key))),
+      new Set(
+        rawData.flatMap((row: any) => {
+          const value = getDeepValue(row, col.key);
+          return Array.isArray(value) ? value : [value];
+        }),
+      ),
     ).filter(v => v !== undefined && v !== null && v !== '');
 
     return uniqueValues.map(val => ({

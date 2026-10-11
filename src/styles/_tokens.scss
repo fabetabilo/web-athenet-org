@@ -20,6 +20,10 @@
   --color-primary-hover:  #009dc9;
   --color-primary-light:  #eff6ff;
   --color-primary-text:   #00C8FF;
+  // Superficies translúcidas de marca (banners informativos, anillos de foco)
+  --color-primary-surface:        rgba(0, 200, 255, 0.08);
+  --color-primary-surface-border: rgba(0, 200, 255, 0.25);
+  --color-primary-ring:           rgba(0, 200, 255, 0.12);
 
   // ── Semantic Colors ──
   --color-bg-main:       var(--color-slate-50);

@@ -4,4 +4,5 @@ export const environment = {
     redirectUri: 'http://localhost:4200',
     apiUrl: 'http://localhost:8080',
     eventsApiUrl: 'http://localhost:8080',
+    graphApiUrl: 'https://graph.microsoft.com/v1.0',
 }
