@@ -1,6 +1,5 @@
 <div class="event-detail-page">
 
-  <!-- ── Estado: cargando ──────────────────────────────────────────────── -->
   @if (loading()) {
     <div class="detail-loading">
       <div class="loading-spinner"></div>
@@ -8,7 +7,6 @@
     </div>
   }
 
-  <!-- ── Estado: error ─────────────────────────────────────────────────── -->
   @if (error() && !loading()) {
     <div class="error-banner">
       <div class="error-content">
@@ -22,9 +20,7 @@
     </div>
   }
 
-  <!-- ── Contenido principal ───────────────────────────────────────────── -->
   @if ((event() || isCreateMode()) && !loading()) {
-    <!-- Header de la página -->
     <div class="detail-header">
       <div class="detail-header-left">
         <button
@@ -40,10 +36,10 @@
         <div class="event-meta">
           @if (!isCreateMode()) {
             <app-pill
-              [variant]="getStatusVariant(event()!.status)"
+              [variant]="status[event()!.status].variant"
               [dot]="true"
             >
-              {{ getStatusLabel(event()!.status) }}
+              {{ status[event()!.status].label }}
             </app-pill>
             <span class="event-id-badge">{{ event()!.internalId }}</span>
           } @else {
@@ -57,7 +53,6 @@
 
     <div class="table-toolbar">
       @if (!isEdit()) {
-        <!-- MODO LECTURA -->
         <app-button
           variant="secondary"
           icon="edit"
@@ -75,7 +70,6 @@
           Eliminar
         </app-button>
       } @else {
-        <!-- MODO EDICIÓN / CREACIÓN -->
         <app-button
           variant="secondary"
           icon="close"
@@ -97,7 +91,6 @@
       }
     </div>
 
-    <!-- Banner de modo edición / creación -->
     @if (isEdit() && !isCreateMode()) {
       <div class="edit-mode-banner">
         <mat-icon>edit_note</mat-icon>
@@ -105,10 +98,8 @@
       </div>
     }
 
-    <!-- Formulario de detalle -->
     <form [formGroup]="form" class="detail-form" autocomplete="off">
 
-      <!-- ── Sección: Información General ──────────────────────────────── -->
       <section class="form-section">
         <span class="section-title">Información General</span>
 
@@ -126,9 +117,7 @@
             } @else {
               <mat-hint>El ID interno no se puede modificar</mat-hint>
             }
-            @if (form.get('internalId')?.hasError('required') && form.get('internalId')?.touched) {
-              <mat-error>El ID interno es obligatorio</mat-error>
-            }
+            <mat-error>{{ fieldError('internalId') }}</mat-error>
           </mat-form-field>
         </div>
 
@@ -136,45 +125,39 @@
           <mat-form-field appearance="outline" class="field-full">
             <mat-label>Título del Evento</mat-label>
             <input matInput formControlName="title" id="field-title" />
-            @if (form.get('title')?.hasError('required') && form.get('title')?.touched) {
-              <mat-error>El título es obligatorio</mat-error>
-            }
+            <mat-error>{{ fieldError('title') }}</mat-error>
           </mat-form-field>
         </div>
 
         <div class="form-row two-col">
-          <mat-form-field appearance="outline">
-            <mat-label>Categoría</mat-label>
-            <mat-select formControlName="category" id="field-category">
-              @for (opt of categoryOptions; track opt.value) {
-                <mat-option [value]="opt.value">{{ opt.label }}</mat-option>
-              }
-            </mat-select>
-          </mat-form-field>
-
           <mat-form-field appearance="outline">
             <mat-label>Tipo de Evento</mat-label>
-            <mat-select formControlName="type" id="field-type">
-              @for (opt of typeOptions; track opt.value) {
-                <mat-option [value]="opt.value">{{ opt.label }}</mat-option>
+            <mat-select formControlName="type" id="field-type" (selectionChange)="onTypeSelected()">
+              @for (opt of typeOptions(); track opt.code) {
+                <mat-option [value]="opt.code">{{ opt.label }}</mat-option>
               }
             </mat-select>
+            <mat-error>{{ fieldError('type') }}</mat-error>
+          </mat-form-field>
+
+          <mat-form-field appearance="outline">
+            <mat-label>{{ requiresMatchup() ? 'Deporte' : 'Deporte (opcional)' }}</mat-label>
+            <mat-select formControlName="sportId" id="field-sport" (selectionChange)="onSportSelected()">
+              @if (!requiresMatchup()) {
+                <mat-option [value]="null">Sin deporte</mat-option>
+              }
+              @for (opt of sportOptions(); track opt.id) {
+                <mat-option [value]="opt.id">{{ opt.name ?? 'Deporte eliminado' }}</mat-option>
+              }
+            </mat-select>
+            @if (sportsError()) {
+              <mat-hint>No se pudo cargar la lista de deportes.</mat-hint>
+            }
+            <mat-error>{{ fieldError('sportId') }}</mat-error>
           </mat-form-field>
         </div>
 
         <div class="form-row two-col">
-          <mat-form-field appearance="outline">
-            <mat-label>Fecha del Evento</mat-label>
-            <input
-              matInput
-              [matDatepicker]="eventDatePicker"
-              formControlName="eventDate"
-              id="field-event-date"
-            />
-            <mat-datepicker-toggle matIconSuffix [for]="eventDatePicker" />
-            <mat-datepicker #eventDatePicker />
-          </mat-form-field>
-
           <mat-form-field appearance="outline">
             <mat-label>Estado</mat-label>
             <mat-select formControlName="status" id="field-status">
@@ -182,10 +165,9 @@
                 <mat-option [value]="opt.value">{{ opt.label }}</mat-option>
               }
             </mat-select>
+            <mat-error>{{ fieldError('status') }}</mat-error>
           </mat-form-field>
-        </div>
 
-        <div class="form-row two-col">
           <mat-form-field appearance="outline">
             <mat-label>Clasificación</mat-label>
             <mat-select formControlName="isOfficial" id="field-is-official">
@@ -196,7 +178,125 @@
         </div>
       </section>
 
-      <!-- ── Sección: Descripción ───────────────────────────────────────── -->
+      <section class="form-section">
+        <span class="section-title">Fecha y Hora</span>
+
+        <div class="form-row two-col">
+          <mat-form-field appearance="outline">
+            <mat-label>Fecha de inicio</mat-label>
+            <input
+              matInput
+              [matDatepicker]="eventDatePicker"
+              formControlName="eventDate"
+              id="field-event-date"
+              (dateChange)="onStartDateChange()"
+            />
+            <mat-datepicker-toggle matIconSuffix [for]="eventDatePicker" />
+            <mat-datepicker #eventDatePicker />
+            <mat-error>{{ fieldError('eventDate') }}</mat-error>
+          </mat-form-field>
+
+          <mat-form-field appearance="outline">
+            <mat-label>Hora de inicio</mat-label>
+            <input matInput [matTimepicker]="startTimePicker" formControlName="startTime" id="field-start-time" />
+            <mat-timepicker-toggle matIconSuffix [for]="startTimePicker" />
+            <mat-timepicker #startTimePicker />
+            <mat-error>{{ fieldError('startTime') }}</mat-error>
+          </mat-form-field>
+        </div>
+
+        <div class="form-row two-col">
+          <mat-form-field appearance="outline">
+            <mat-label>Fecha de término</mat-label>
+            <input matInput [matDatepicker]="endDatePicker" formControlName="endDate" id="field-end-date" />
+            <mat-datepicker-toggle matIconSuffix [for]="endDatePicker" />
+            <mat-datepicker #endDatePicker />
+            <mat-error>{{ fieldError('endDate') }}</mat-error>
+          </mat-form-field>
+
+          <mat-form-field appearance="outline">
+            <mat-label>Hora de término</mat-label>
+            <input matInput [matTimepicker]="endTimePicker" formControlName="endTime" id="field-end-time" />
+            <mat-timepicker-toggle matIconSuffix [for]="endTimePicker" />
+            <mat-timepicker #endTimePicker />
+            <mat-hint>Puede terminar al día siguiente o varios días después.</mat-hint>
+            <mat-error>{{ fieldError('endTime') }}</mat-error>
+          </mat-form-field>
+        </div>
+      </section>
+
+      @if (hasType() && !requiresMatchup()) {
+        <section class="form-section">
+          <span class="section-title">Organizador</span>
+          <app-team-picker
+            label="Institución organizadora"
+            mode="organizer"
+            [sportId]="sportValue()"
+            [institution]="ctrl('organizerInstitutionId')"
+            [campus]="ctrl('organizerCampusId')"
+            [team]="ctrl('organizerTeamId')"
+            [seed]="organizerSeed()"
+          />
+        </section>
+      }
+
+      @if (requiresMatchup()) {
+        <section class="form-section">
+          <span class="section-title">Enfrentamiento</span>
+          <app-team-picker
+            label="Equipo 1"
+            mode="matchup"
+            [sportId]="sportValue()"
+            [institution]="ctrl('teamOneInstitutionId')"
+            [campus]="ctrl('teamOneCampusId')"
+            [team]="ctrl('teamOneId')"
+            [seed]="teamOneSeed()"
+            [excludeTeamId]="teamTwoId()"
+            (selectedTeam)="onTeamOneSelected($event)"
+          />
+          <app-team-picker
+            label="Equipo 2"
+            mode="matchup"
+            [sportId]="sportValue()"
+            [institution]="ctrl('teamTwoInstitutionId')"
+            [campus]="ctrl('teamTwoCampusId')"
+            [team]="ctrl('teamTwoId')"
+            [seed]="teamTwoSeed()"
+            [division]="teamOneDivision()"
+            [excludeTeamId]="teamOneId()"
+            (selectedTeam)="onTeamTwoSelected($event)"
+          />
+        </section>
+      }
+
+      <section class="form-section">
+        <span class="section-title">Delegado</span>
+
+        <div class="form-row two-col">
+          <mat-form-field appearance="outline">
+            <mat-label>{{ requiresMatchup() ? 'Delegado' : 'Delegado (opcional)' }}</mat-label>
+            <mat-icon matPrefix>sports</mat-icon>
+            <mat-select formControlName="delegateOid" id="field-delegate">
+              @if (!requiresMatchup()) {
+                <mat-option [value]="null">Sin delegado</mat-option>
+              }
+              @for (opt of delegateOptions(); track opt.oid) {
+                <mat-option [value]="opt.oid">{{ delegateLabel(opt) }}</mat-option>
+              }
+            </mat-select>
+            @if (delegatesError(); as message) {
+              <mat-hint>
+                {{ message }}
+                @if (requiresMatchup()) {
+                  Sin delegado no se puede guardar un partido.
+                }
+              </mat-hint>
+            }
+            <mat-error>{{ fieldError('delegateOid') }}</mat-error>
+          </mat-form-field>
+        </div>
+      </section>
+
       <section class="form-section">
         <span class="section-title">Descripción</span>
 
@@ -209,6 +309,7 @@
               id="field-description"
               rows="3"
             ></textarea>
+            <mat-error>{{ fieldError('description') }}</mat-error>
           </mat-form-field>
         </div>
 
@@ -225,7 +326,6 @@
         </div>
       </section>
 
-      <!-- ── Sección: Lugar ─────────────────────────────────────────────── -->
       <section class="form-section">
         <span class="section-title">Lugar</span>
 
@@ -244,7 +344,6 @@
         </div>
       </section>
 
-      <!-- ── Sección: Medios ────────────────────────────────────────────── -->
       <section class="form-section">
         <span class="section-title">Medios</span>
 
@@ -258,9 +357,7 @@
               id="field-cover-image"
               placeholder="https://…"
             />
-            @if (form.get('coverImage')?.hasError('required') && form.get('coverImage')?.touched) {
-              <mat-error>La URL de imagen de portada es obligatoria</mat-error>
-            }
+            <mat-error>{{ fieldError('coverImage') }}</mat-error>
           </mat-form-field>
         </div>
 
@@ -307,48 +404,6 @@
             Agregar foto
           </button>
         }
-      </section>
-
-      <!-- ── Sección: Datos Internos ────────────────────────────────────── -->
-      <section class="form-section">
-        <span class="section-title">Datos Internos</span>
-
-        <div class="form-row two-col">
-          <mat-form-field appearance="outline">
-            <mat-label>ID de Organización</mat-label>
-            <input
-              matInput
-              type="number"
-              formControlName="organizationId"
-              id="field-org-id"
-            />
-            @if (form.get('organizationId')?.hasError('required') && form.get('organizationId')?.touched) {
-              <mat-error>El ID de organización es obligatorio</mat-error>
-            }
-          </mat-form-field>
-
-          <mat-form-field appearance="outline">
-            <mat-label>ID Equipo 1</mat-label>
-            <input
-              matInput
-              type="number"
-              formControlName="teamOneId"
-              id="field-team-one-id"
-            />
-          </mat-form-field>
-        </div>
-
-        <div class="form-row two-col">
-          <mat-form-field appearance="outline">
-            <mat-label>ID Equipo 2</mat-label>
-            <input
-              matInput
-              type="number"
-              formControlName="teamTwoId"
-              id="field-team-two-id"
-            />
-          </mat-form-field>
-        </div>
       </section>
 
     </form>

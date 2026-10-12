@@ -46,7 +46,7 @@ La capa de interfaz combina la logica funcional de Angular Material con el siste
    Utilizar los componentes de `shared/components/` para mantener consistencia transversal entre modulos (`admin`, `director`, etc.). Extender el componente compartido si se requiere un nuevo comportamiento generalizable.
 
 3. **Presupuesto de Estilos (Budget):**
-   Angular CLI limita el tamano de SCSS por componente a 4 kB (`maximumWarning`). Evitar anidamientos redundantes y reutilizar clases utilitarias del layout global (`src/styles/_layout.scss`).
+   Angular CLI limita el tamano de SCSS por componente a 8 kB (`maximumWarning`) y 12 kB (`maximumError`), segun `anyComponentStyle` en `angular.json`. Evitar anidamientos redundantes y reutilizar clases utilitarias del layout global (`src/styles/_layout.scss`).
 
 4. **Arquitectura Standalone:**
    Todo nuevo componente debe ser standalone e importar unicamente los modulos necesarios para su ejecucion.

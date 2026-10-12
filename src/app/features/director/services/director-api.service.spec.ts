@@ -1,23 +1,101 @@
 import { TestBed } from '@angular/core/testing';
 import { HttpTestingController, provideHttpClientTesting } from '@angular/common/http/testing';
 import { provideHttpClient } from '@angular/common/http';
-import {
-  DirectorApiService,
-  normalizeAthenetEvent,
-} from './director-api.service';
-import { environment } from '../../../../environments/environment';
+import { of, throwError } from 'rxjs';
+import { MsalService } from '@azure/msal-angular';
+import { InteractionRequiredAuthError } from '@azure/msal-browser';
+import { DirectorApiService } from './director-api.service';
+import { bffBaseUrl, type EventRead, type EventWrite } from './bff';
 
 describe('DirectorApiService', () => {
+  /** Partido que cruza la medianoche, con la forma de lectura del BFF. */
+  const MATCH_EVENT: EventRead = {
+    id: 42,
+    internalId: 'EVT-42',
+    title: 'Clásico universitario de fútbol',
+    description: 'Final del torneo interuniversitario.',
+    descriptionOpt: null,
+    type: 'MATCH',
+    status: 'PUBLISHED',
+    isOfficial: true,
+    eventDate: '2026-10-24',
+    startTime: '22:00',
+    endDate: '2026-10-25',
+    endTime: '00:30',
+    location: 'Estadio USACH',
+    address: null,
+    coverImage: 'https://example.com/cover.jpg',
+    photos: [],
+    sport: { id: 3, name: 'Fútbol' },
+    organizer: null,
+    teamOne: {
+      id: 100,
+      name: 'USACH Fútbol Varones',
+      division: 'MASCULINO',
+      campus: { id: 10, name: 'Casa Central' },
+      institution: { id: 1, name: 'Universidad de Santiago de Chile', acronym: 'USACH' },
+    },
+    teamTwo: {
+      id: 200,
+      name: 'U. de Chile Fútbol Varones',
+      division: 'MASCULINO',
+      campus: { id: 20, name: 'Campus Juan Gómez Millas' },
+      institution: { id: 2, name: 'Universidad de Chile', acronym: 'UCH' },
+    },
+    delegate: { oid: '3f2b9c1e-5a7d-4c1b-9e2f-1d0a8b6c4e21', displayName: 'María Pérez' },
+  };
+
+  /** Jornada de varios días, sin deporte, organizada por una institución. */
+  const TRACKDAY_EVENT: EventRead = {
+    ...MATCH_EVENT,
+    id: 43,
+    internalId: 'EVT-43',
+    title: 'Jornada de pista de primavera',
+    type: 'TRACKDAY',
+    status: 'DRAFT',
+    isOfficial: false,
+    eventDate: '2026-11-06',
+    startTime: '09:00',
+    endDate: '2026-11-08',
+    endTime: '18:00',
+    sport: null,
+    organizer: {
+      institution: { id: 1, name: 'Universidad de Santiago de Chile', acronym: 'USACH' },
+      campus: { id: 10, name: 'Casa Central' },
+      team: null,
+    },
+    teamOne: null,
+    teamTwo: null,
+    delegate: null,
+  };
+
+  const eventsUrl = `${bffBaseUrl()}/events`;
+  const account = { homeAccountId: 'home-1', username: 'director@athenet.cl' } as any;
+
   let service: DirectorApiService;
   let httpTesting: HttpTestingController;
-  const eventsApiUrl = (environment.eventsApiUrl ?? 'http://localhost:8080').replace(/\/+$/, '');
+  let msalMock: any;
+
+  const payload = { internalId: 'EVT-42', title: 'Clásico' } as EventWrite;
 
   beforeEach(() => {
+    msalMock = {
+      instance: {
+        getActiveAccount: vi.fn().mockReturnValue(account),
+        getAllAccounts: vi.fn().mockReturnValue([account]),
+        setActiveAccount: vi.fn(),
+      },
+      acquireTokenSilent: vi.fn().mockReturnValue(
+        of({ accessToken: 'api-access-token', idToken: 'id-token-que-el-bff-rechaza' }),
+      ),
+      acquireTokenPopup: vi.fn().mockReturnValue(of({ accessToken: 'popup-access-token' })),
+    };
+
     TestBed.configureTestingModule({
       providers: [
         provideHttpClient(),
         provideHttpClientTesting(),
-        DirectorApiService,
+        { provide: MsalService, useValue: msalMock },
       ],
     });
 
@@ -25,189 +103,85 @@ describe('DirectorApiService', () => {
     httpTesting = TestBed.inject(HttpTestingController);
   });
 
-  afterEach(() => {
-    httpTesting.verify();
+  afterEach(() => httpTesting.verify());
+
+  it('debe listar los eventos con el access token de la API, no con el idToken', () => {
+    let eventos: any[] = [];
+    service.getEvents().subscribe((lista) => (eventos = lista));
+
+    const req = httpTesting.expectOne(eventsUrl);
+    expect(req.request.method).toBe('GET');
+    expect(req.request.headers.get('Authorization')).toBe('Bearer api-access-token');
+    req.flush([MATCH_EVENT, TRACKDAY_EVENT]);
+
+    expect(eventos.map((e) => e.internalId)).toEqual(['EVT-42', 'EVT-43']);
+    expect(eventos[0].teamOne.institution.acronym).toBe('USACH');
   });
 
-  it('debe crearse correctamente y resolver eventsApiUrl limpia', () => {
-    expect(service).toBeTruthy();
-    expect(service.getEventsApiUrl()).toBe(eventsApiUrl);
+  it('debe pedir el detalle por internalId', () => {
+    service.getEventByInternalId('EVT-42').subscribe();
+    httpTesting.expectOne(`${eventsUrl}/EVT-42`).flush(MATCH_EVENT);
   });
 
-  describe('normalizeAthenetEvent', () => {
-    it('debe normalizar respuestas con claves camelCase', () => {
-      const raw = {
-        internalId: 'EVT-1',
-        title: 'Torneo',
-        category: 'FUTBOL',
-        eventDate: '2026-10-01',
-        status: 'PUBLISHED',
-        isOfficial: true,
-        location: 'Campus San Joaquín',
-      };
-      const result = normalizeAthenetEvent(raw);
-      expect(result.internalId).toBe('EVT-1');
-      expect(result.title).toBe('Torneo');
-      expect(result.isOfficial).toBe(true);
-      expect(result.status).toBe('PUBLISHED');
-    });
+  it('debe crear con POST /events y actualizar con PUT /events/{internalId}', () => {
+    service.createEvent(payload).subscribe();
+    const post = httpTesting.expectOne(eventsUrl);
+    expect(post.request.method).toBe('POST');
+    expect(post.request.body).toBe(payload);
+    post.flush(MATCH_EVENT, { status: 201, statusText: 'Created' });
 
-    it('debe normalizar respuestas con claves snake_case de base de datos', () => {
-      const raw = {
-        internal_id: 'EVT-SQL-9',
-        title: 'Copa Interfacultades',
-        category: 'VOLEIBOL',
-        event_date: '2026-11-20',
-        status: 'PUBLISHED',
-        is_official_flag: true,
-        location: 'Gimnasio Central',
-        description_opt: 'Descripción detallada',
-      };
-      const result = normalizeAthenetEvent(raw);
-      expect(result.internalId).toBe('EVT-SQL-9');
-      expect(result.eventDate).toBe('2026-11-20');
-      expect(result.isOfficial).toBe(true);
-      expect(result.descriptionOpt).toBe('Descripción detallada');
-    });
-
-    it('debe manejar objetos vacíos o nulos de forma segura', () => {
-      const result = normalizeAthenetEvent(null);
-      expect(result.internalId).toBe('');
-      expect(result.status).toBe('DRAFT');
-      expect(result.isOfficial).toBe(false);
-    });
+    service.updateEvent('EVT-42', payload).subscribe();
+    const put = httpTesting.expectOne(`${eventsUrl}/EVT-42`);
+    expect(put.request.method).toBe('PUT');
+    put.flush(MATCH_EVENT);
   });
 
-  describe('getEvents', () => {
-    it('debe realizar petición GET a /api/public/events y retornar eventos normalizados', () => {
-      const mockBackendResponse = [
-        {
-          internal_id: 'EVT-1',
-          title: 'Campeonato Sudamericano',
-          category: 'TENIS_MESA',
-          event_date: '2026-09-24',
-          status: 'PUBLISHED',
-          is_official_flag: true,
-          location: 'Santiago, Chile',
-        },
-      ];
+  it('debe eliminar con DELETE /events/{internalId}', () => {
+    let completado = false;
+    service.deleteEvent('EVT-42').subscribe(() => (completado = true));
 
-      service.getEvents().subscribe((events) => {
-        expect(events.length).toBe(1);
-        expect(events[0].internalId).toBe('EVT-1');
-        expect(events[0].title).toBe('Campeonato Sudamericano');
-        expect(events[0].isOfficial).toBe(true);
-      });
-
-      const req = httpTesting.expectOne(`${eventsApiUrl}/api/public/events`);
-      expect(req.request.method).toBe('GET');
-      req.flush(mockBackendResponse);
-    });
-
-    it('debe soportar respuestas con envoltorio paginado (content)', () => {
-      const mockPagedResponse = {
-        content: [
-          {
-            internalId: 'EVT-PAGED',
-            title: 'Evento Paginado',
-            category: 'AJEDREZ',
-            eventDate: '2026-12-01',
-            status: 'PUBLISHED',
-            isOfficial: false,
-            location: 'Online',
-          },
-        ],
-        totalElements: 1,
-      };
-
-      service.getEvents().subscribe((events) => {
-        expect(events.length).toBe(1);
-        expect(events[0].internalId).toBe('EVT-PAGED');
-      });
-
-      const req = httpTesting.expectOne(`${eventsApiUrl}/api/public/events`);
-      req.flush(mockPagedResponse);
-    });
-
-    it('debe propagar el error HTTP cuando la API falla', () => {
-      let errorOccurred = false;
-
-      service.getEvents().subscribe({
-        next: () => {
-          throw new Error('No debería tener éxito ante un error 500');
-        },
-        error: (err) => {
-          errorOccurred = true;
-          expect(err.status).toBe(500);
-        },
-      });
-
-      const req = httpTesting.expectOne(`${eventsApiUrl}/api/public/events`);
-      req.flush('Error interno del servidor', { status: 500, statusText: 'Server Error' });
-      expect(errorOccurred).toBe(true);
-    });
+    const req = httpTesting.expectOne(`${eventsUrl}/EVT-42`);
+    expect(req.request.method).toBe('DELETE');
+    req.flush(null, { status: 204, statusText: 'No Content' });
+    expect(completado).toBe(true);
   });
 
-  describe('getAllAdminEvents', () => {
-    it('debe realizar petición GET a /api/admin/events y retornar eventos normalizados (incluyendo borradores)', () => {
-      const mockBackendResponse = [
-        {
-          internal_id: 'EVT-1',
-          title: 'Evento Publicado',
-          status: 'PUBLISHED',
-        },
-        {
-          internal_id: 'EVT-2',
-          title: 'Evento Borrador',
-          status: 'DRAFT',
-        },
-      ];
-
-      service.getAllAdminEvents().subscribe((events) => {
-        expect(events.length).toBe(2);
-        expect(events[0].internalId).toBe('EVT-1');
-        expect(events[0].status).toBe('PUBLISHED');
-        expect(events[1].status).toBe('DRAFT');
-      });
-
-      const req = httpTesting.expectOne(`${eventsApiUrl}/api/admin/events`);
-      expect(req.request.method).toBe('GET');
-      req.flush(mockBackendResponse);
-    });
+  it('debe codificar el internalId en la URL', () => {
+    service.getEventByInternalId('EVT/1').subscribe();
+    httpTesting.expectOne(`${eventsUrl}/EVT%2F1`).flush(MATCH_EVENT);
   });
 
-  describe('deleteEvent', () => {
-    it('debe realizar petición DELETE a /api/admin/events/:id con status 204 No Content', () => {
-      let completed = false;
+  it('debe abrir el popup solo si MSAL exige interacción', () => {
+    msalMock.acquireTokenSilent.mockReturnValue(
+      throwError(() => new InteractionRequiredAuthError('interaction_required', 'corr-1')),
+    );
 
-      service.deleteEvent('EVT-100').subscribe(() => {
-        completed = true;
-      });
+    service.getEvents().subscribe();
 
-      const req = httpTesting.expectOne(`${eventsApiUrl}/api/admin/events/EVT-100`);
-      expect(req.request.method).toBe('DELETE');
-      req.flush(null, { status: 204, statusText: 'No Content' });
+    const req = httpTesting.expectOne(eventsUrl);
+    expect(msalMock.acquireTokenPopup).toHaveBeenCalledTimes(1);
+    expect(req.request.headers.get('Authorization')).toBe('Bearer popup-access-token');
+    req.flush([]);
+  });
 
-      expect(completed).toBe(true);
-    });
+  it('debe propagar el error HTTP del BFF', () => {
+    let status = 0;
+    service.getEventByInternalId('EVT-999').subscribe({ error: (err) => (status = err.status) });
 
-    it('debe propagar errores HTTP si la eliminación falla (ej. 404 o 403)', () => {
-      let errorStatus = 0;
+    httpTesting
+      .expectOne(`${eventsUrl}/EVT-999`)
+      .flush({ status: 404, code: 'EVENT_NOT_FOUND' }, { status: 404, statusText: 'Not Found' });
+    expect(status).toBe(404);
+  });
 
-      service.deleteEvent('EVT-999').subscribe({
-        next: () => {
-          throw new Error('No debería tener éxito');
-        },
-        error: (err) => {
-          errorStatus = err.status;
-        },
-      });
+  it('debe fallar sin hacer la petición si MSAL no tiene cuenta', () => {
+    msalMock.instance.getActiveAccount.mockReturnValue(null);
+    msalMock.instance.getAllAccounts.mockReturnValue([]);
+    let mensaje = '';
 
-      const req = httpTesting.expectOne(`${eventsApiUrl}/api/admin/events/EVT-999`);
-      expect(req.request.method).toBe('DELETE');
-      req.flush('No encontrado', { status: 404, statusText: 'Not Found' });
+    service.getEvents().subscribe({ error: (err) => (mensaje = err.message) });
 
-      expect(errorStatus).toBe(404);
-    });
+    expect(mensaje).toContain('No hay una sesión activa');
+    httpTesting.expectNone(eventsUrl);
   });
 });
