@@ -1,89 +1,90 @@
-import { Component, OnInit, inject, signal } from '@angular/core';
-import { CommonModule } from '@angular/common';
+import { Component, DestroyRef, OnInit, computed, inject, signal } from '@angular/core';
+import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { ActivatedRoute, Router } from '@angular/router';
 import {
-  FormBuilder,
-  FormGroup,
   FormArray,
+  FormBuilder,
+  FormControl,
+  FormGroup,
   ReactiveFormsModule,
+  ValidatorFn,
   Validators,
 } from '@angular/forms';
 import { MatFormFieldModule } from '@angular/material/form-field';
 import { MatInputModule } from '@angular/material/input';
 import { MatSelectModule } from '@angular/material/select';
 import { MatDatepickerModule } from '@angular/material/datepicker';
+import { MatTimepickerModule } from '@angular/material/timepicker';
 import { MatNativeDateModule } from '@angular/material/core';
 import { MatIconModule } from '@angular/material/icon';
-import { MatButtonModule } from '@angular/material/button';
 import { MatDialog } from '@angular/material/dialog';
-import { switchMap, of } from 'rxjs';
+import { merge, of, switchMap } from 'rxjs';
 
 import { ButtonComponent } from '../../../../shared/components/button/button';
-import { PillComponent, type PillVariant } from '../../../../shared/components/pill/pill';
+import { PillComponent } from '../../../../shared/components/pill/pill';
 import {
   ConfirmDialogComponent,
   type ConfirmDialogData,
 } from '../../../../shared/components/confirm-dialog/confirm-dialog';
 import {
-  DirectorApiService,
-  type AthenetEvent,
-} from '../../services/director-api.service';
+  asLocalIsoDate,
+  asLocalTime,
+  endBeforeStartField,
+  parseLocalIsoDate,
+  parseLocalTime,
+} from '../../../../shared/utils/local-date';
+import { DirectorApiService } from '../../services/director-api.service';
+import { EventCatalogService } from '../../services/event-catalog.service';
+import { DevDelegatesService } from '../../services/dev-delegates.service';
+import type {
+  DelegateRef,
+  EventRead,
+  EventType,
+  EventWrite,
+  Sport,
+  Team,
+} from '../../services/bff';
+import { EVENT_STATUS, STATUS_OPTIONS } from '../event-status';
+import { controlErrorMessage } from './control-error';
+import {
+  TeamPickerComponent,
+  seedFromOrganizer,
+  seedFromTeam,
+  withSelected,
+} from './team-picker/team-picker';
 
-// ── Opciones de catálogo (mismo conjunto que la tabla de events) ──────────────
-export const CATEGORY_OPTIONS = [
-  { label: 'Fútbol', value: 'FUTBOL' },
-  { label: 'Básquetbol', value: 'BASQUETBOL' },
-  { label: 'Vóleibol', value: 'VOLEIBOL' },
-  { label: 'Ajedrez', value: 'AJEDREZ' },
-  { label: 'Tenis', value: 'TENIS' },
-  { label: 'Natación', value: 'NATACION' },
-  { label: 'Fútsal', value: 'FUTSAL' },
-  { label: 'Vóleibol Playa', value: 'VOLEIBOL_PLAYA' },
-  { label: 'Balonmano', value: 'BALON_MANO' },
-  { label: 'Rugby', value: 'RUGBY' },
-  { label: 'Judo', value: 'JUDO' },
-  { label: 'Kárate', value: 'KARATE' },
-  { label: 'Taekwondo', value: 'TAEKWONDO' },
-  { label: 'Tenis de Mesa', value: 'TENIS_MESA' },
-  { label: 'Gimnasia', value: 'GIMNASIA' },
-  { label: 'Gimnasia Rítmica', value: 'GIMNASIA_RITMICA' },
-  { label: 'Escalada Deportiva', value: 'ESCALADA_DEPORTIVA' },
-  { label: 'Levantamiento de Pesas', value: 'LEVANTAMIENTO_PESAS' },
-  { label: 'Cross Country', value: 'CROSS_COUNTRY' },
-  { label: 'Atletismo', value: 'ATLETISMO' },
-];
+/** Solo aplican si el tipo lleva enfrentamiento. */
+const MATCHUP_FIELDS = [
+  'teamOneInstitutionId',
+  'teamOneCampusId',
+  'teamOneId',
+  'teamTwoInstitutionId',
+  'teamTwoCampusId',
+  'teamTwoId',
+] as const;
 
-export const TYPE_OPTIONS = [
-  { label: 'Partido', value: 'MATCH' },
-  { label: 'Reunión', value: 'MEETING' },
-  { label: 'Jornada de Pista', value: 'TRACKDAY' },
-  { label: 'Otro', value: 'OTHER' },
-];
-
-export const STATUS_OPTIONS = [
-  { label: 'Publicado', value: 'PUBLISHED' },
-  { label: 'Borrador', value: 'DRAFT' },
-  { label: 'Cancelado', value: 'CANCELLED' },
-];
-
-// ─────────────────────────────────────────────────────────────────────────────
+/** Solo en eventos que no son partido. */
+const ORGANIZER_FIELDS = ['organizerInstitutionId', 'organizerCampusId', 'organizerTeamId'] as const;
+const ORGANIZER_REQUIRED = ['organizerInstitutionId', 'organizerCampusId'] as const;
 
 @Component({
   selector: 'app-event-detail',
   standalone: true,
   imports: [
-    CommonModule,
     ReactiveFormsModule,
     MatFormFieldModule,
     MatInputModule,
     MatSelectModule,
     MatDatepickerModule,
+    MatTimepickerModule,
     MatNativeDateModule,
     MatIconModule,
-    MatButtonModule,
     ButtonComponent,
     PillComponent,
+    TeamPickerComponent,
   ],
+  // Caché de catálogos por formulario.
+  providers: [EventCatalogService],
   templateUrl: './event-detail.html',
   styleUrl: './event-detail.scss',
 })
@@ -91,48 +92,84 @@ export class EventDetailComponent implements OnInit {
   private readonly route = inject(ActivatedRoute);
   private readonly router = inject(Router);
   private readonly directorApi = inject(DirectorApiService);
+  private readonly catalog = inject(EventCatalogService);
+  // TEMPORAL (solo desarrollo): ver advertencia en DevDelegatesService.
+  private readonly devDelegates = inject(DevDelegatesService);
   private readonly dialog = inject(MatDialog);
   private readonly fb = inject(FormBuilder);
+  private readonly destroyRef = inject(DestroyRef);
 
-  protected readonly event    = signal<AthenetEvent | null>(null);
+  protected readonly event    = signal<EventRead | null>(null);
   protected readonly loading  = signal<boolean>(true);
   protected readonly error    = signal<string | null>(null);
-  /** Controla si el formulario está en modo edición o lectura */
   protected readonly isEdit   = signal<boolean>(false);
-  /** true cuando se está creando un nuevo evento en lugar de editar uno existente */
   protected readonly isCreateMode = signal<boolean>(false);
-  /** true mientras la petición updateEvent/createEvent está en vuelo */
   protected readonly isSaving = signal<boolean>(false);
 
-  // Catálogos expuestos al template
-  protected readonly categoryOptions = CATEGORY_OPTIONS;
-  protected readonly typeOptions = TYPE_OPTIONS;
+  // Tipos: siempre. El resto: solo al crear o editar.
+  protected readonly eventTypes = signal<EventType[]>([]);
+  protected readonly sports = signal<Sport[]>([]);
+  protected readonly sportsError = signal<boolean>(false);
+  protected readonly delegates = signal<DelegateRef[]>([]);
+  protected readonly delegatesLoaded = signal<boolean>(false);
+  protected readonly delegatesError = signal<string | null>(null);
+  private catalogsRequested = false;
+
+  // Valores del formulario que gobiernan la vista.
+  private readonly typeValue = signal<string | null>(null);
+  protected readonly sportValue = signal<number | null>(null);
+  private readonly delegateValue = signal<string | null>(null);
+  private readonly teamOneSelected = signal<Team | null>(null);
+  private readonly teamTwoSelected = signal<Team | null>(null);
+
   protected readonly statusOptions = STATUS_OPTIONS;
+  protected readonly status = EVENT_STATUS;
+  protected readonly fieldError = (name: string) => controlErrorMessage(this.form.get(name));
+
+  protected readonly hasType = computed(() => !!this.typeValue());
+
+  /** Del catálogo de tipos; sin catálogo, se infiere del evento guardado. */
+  protected readonly requiresMatchup = computed(() => {
+    const type = this.typeValue();
+    if (!type) return false;
+    const known = this.eventTypes().find((t) => t.code === type);
+    if (known) return known.requiresMatchup;
+    const ev = this.event();
+    return !!ev && ev.type === type && (ev.teamOne !== null || ev.teamTwo !== null);
+  });
+
+  protected readonly typeOptions = computed(() => {
+    const ev = this.event();
+    const saved = ev && ev.type === this.typeValue()
+      ? { code: ev.type, label: ev.type, requiresMatchup: false }
+      : null;
+    return withSelected(this.eventTypes(), saved, (t) => t.code);
+  });
+
+  protected readonly sportOptions = computed(() => {
+    const saved = this.event()?.sport;
+    return withSelected(this.sports(), saved?.id === this.sportValue() ? saved : null, (s) => s.id);
+  });
+
+  protected readonly delegateOptions = computed(() => {
+    const saved = this.event()?.delegate;
+    return withSelected(this.delegates(), saved?.oid === this.delegateValue() ? saved : null, (d) => d.oid);
+  });
+
+  protected readonly organizerSeed = computed(() => seedFromOrganizer(this.event()?.organizer));
+  protected readonly teamOneSeed = computed(() => seedFromTeam(this.event()?.teamOne));
+  protected readonly teamTwoSeed = computed(() => seedFromTeam(this.event()?.teamTwo));
+  protected readonly teamOneDivision = computed(() => this.teamOneSelected()?.division ?? null);
+  protected readonly teamOneId = computed(() => this.teamOneSelected()?.id ?? null);
+  protected readonly teamTwoId = computed(() => this.teamTwoSelected()?.id ?? null);
 
   protected form!: FormGroup;
 
   ngOnInit(): void {
-    // Construir el formulario deshabilitado (modo lectura)
-    this.form = this.fb.group({
-      internalId:      [{ value: '', disabled: true }, Validators.required],
-      title:           [{ value: '', disabled: true }, Validators.required],
-      category:        [{ value: '', disabled: true }, Validators.required],
-      type:            [{ value: '', disabled: true }, Validators.required],
-      eventDate:       [{ value: null, disabled: true }, Validators.required],
-      status:          [{ value: '', disabled: true }, Validators.required],
-      isOfficial:      [{ value: false, disabled: true }],
-      location:        [{ value: '', disabled: true }],
-      address:         [{ value: '', disabled: true }],
-      description:     [{ value: '', disabled: true }],
-      descriptionOpt:  [{ value: '', disabled: true }],
-      coverImage:      [{ value: '', disabled: true }, Validators.required],
-      photos:          this.fb.array([]),
-      organizationId:  [{ value: null, disabled: true }, Validators.required],
-      teamOneId:       [{ value: null, disabled: true }],
-      teamTwoId:       [{ value: null, disabled: true }],
-    });
+    this.form = this._buildForm();
+    this._watchForm();
+    this._loadEventTypes();
 
-    // Resolución del evento: primero desde la ruta de lista cargada; fallback API
     this.route.paramMap
       .pipe(
         switchMap((params) => {
@@ -140,14 +177,14 @@ export class EventDetailComponent implements OnInit {
           if (internalId === 'new') {
             return of(null);
           }
-          // Si ya tenemos el evento cargado (ej. tras una creación exitosa) y
-          // la URL simplemente se actualizó con replaceUrl, no volvemos a la API.
+          // Tras crear, la URL cambia con replaceUrl: no se vuelve a pedir.
           const loaded = this.event();
           if (loaded && loaded.internalId === internalId) {
             return of(loaded);
           }
           return this.directorApi.getEventByInternalId(internalId);
         }),
+        takeUntilDestroyed(this.destroyRef),
       )
       .subscribe({
         next: (ev) => {
@@ -155,6 +192,8 @@ export class EventDetailComponent implements OnInit {
             this.isCreateMode.set(true);
             this.isEdit.set(true);
             this.form.enable();
+            this._applyTypeRules();
+            this._loadCatalogs();
             this.loading.set(false);
             return;
           }
@@ -169,50 +208,67 @@ export class EventDetailComponent implements OnInit {
       });
   }
 
-  // ── Getters de utilidad ────────────────────────────────────────────────────
-
   get photosArray(): FormArray {
     return this.form.get('photos') as FormArray;
   }
 
-  protected getStatusVariant(status: string): PillVariant {
-    switch (status) {
-      case 'PUBLISHED': return 'success';
-      case 'DRAFT':     return 'warning';
-      case 'CANCELLED': return 'danger';
-      default:          return 'neutral';
+  protected ctrl(name: string): FormControl<number | null> {
+    return this.form.get(name) as FormControl<number | null>;
+  }
+
+  /** Delegado guardado que ya no tiene el rol. */
+  protected delegateLabel(option: DelegateRef): string {
+    const stale = this.delegatesLoaded() && !this.delegates().some((d) => d.oid === option.oid);
+    return stale ? `${option.displayName} (sin rol vigente)` : option.displayName;
+  }
+
+  onTeamOneSelected(team: Team | null): void {
+    this.teamOneSelected.set(team);
+    this.form.get('teamTwoId')?.updateValueAndValidity({ emitEvent: false });
+  }
+
+  onTeamTwoSelected(team: Team | null): void {
+    this.teamTwoSelected.set(team);
+    this.form.get('teamTwoId')?.updateValueAndValidity({ emitEvent: false });
+  }
+
+  onTypeSelected(): void {
+    const unused = this.requiresMatchup() ? ORGANIZER_FIELDS : MATCHUP_FIELDS;
+    unused.forEach((name) => this.form.get(name)?.setValue(null));
+  }
+
+  onSportSelected(): void {
+    [...MATCHUP_FIELDS, 'organizerTeamId'].forEach((name) => this.form.get(name)?.setValue(null));
+  }
+
+  onStartDateChange(): void {
+    const eventDate = this.form.get('eventDate');
+    const endDate = this.form.get('endDate');
+    eventDate?.markAsTouched();
+    if (endDate && !endDate.value && eventDate?.value) {
+      endDate.setValue(eventDate.value);
     }
   }
-
-  protected getStatusLabel(status: string): string {
-    return STATUS_OPTIONS.find((o) => o.value === status)?.label ?? status;
-  }
-
-  protected getCategoryLabel(category: string): string {
-    return CATEGORY_OPTIONS.find((o) => o.value === category)?.label ?? category;
-  }
-
-  // ── Acciones ───────────────────────────────────────────────────────────────
 
   onBack(): void {
     this.router.navigate(['/director/events']);
   }
 
-  /** Habilita todos los controles del formulario y activa el modo edición */
   onEdit(): void {
     this.form.enable();
-    // El ID Interno nunca se puede modificar en modo edición
     this.form.get('internalId')?.disable();
     this.photosArray.controls.forEach((c) => c.enable());
+    // Un deporte eliminado ya no es válido.
+    if (this.event()?.sport && this.event()!.sport!.name === null) {
+      this.form.get('sportId')?.setValue(null);
+    }
+    this._applyTypeRules();
+    this._loadCatalogs();
     this.form.markAsPristine();
     this.isEdit.set(true);
   }
 
-  /**
-   * Cancela la edición o creación.
-   * Si el formulario tiene cambios sin guardar, abre un ConfirmDialog de advertencia.
-   * Si no hay cambios, restaura el modo lectura o vuelve a la lista (en creación).
-   */
+  /** Con cambios pendientes pide confirmación antes de descartar. */
   onCancelEdit(): void {
     if (this.form.dirty) {
       const data: ConfirmDialogData = {
@@ -250,18 +306,13 @@ export class EventDetailComponent implements OnInit {
     }
   }
 
-  /**
-   * Valida el formulario, abre un ConfirmDialog de confirmación y llama a createEvent o updateEvent.
-   * En éxito: actualiza el Signal event() y restaura el modo lectura, o navega a la nueva ruta si se creó.
-   * En error: muestra el banner de error.
-   */
   onSave(): void {
     this.form.markAllAsTouched();
     if (this.form.invalid) return;
 
     const ev = this.event();
     const targetName = this.isCreateMode() ? this.form.get('title')?.value : ev?.title;
-    
+
     const data: ConfirmDialogData = {
       title: this.isCreateMode() ? 'Crear Evento' : 'Guardar Cambios',
       message: this.isCreateMode()
@@ -292,50 +343,34 @@ export class EventDetailComponent implements OnInit {
       if (this.isCreateMode()) {
         this.directorApi.createEvent(payload).subscribe({
           next: (created) => {
-            // Poblar el Signal con el evento devuelto por el backend y pasar a modo lectura
-            // sin disparar un ciclo de navegación que volvería a llamar a la API
             this.event.set(created);
-            this._patchForm(created);
             this.isCreateMode.set(false);
             this._restoreReadMode();
             this.isSaving.set(false);
-            // Actualizar la URL sin recargar el componente
-            this.router.navigate(
-              ['/director/events', created.internalId],
-              { replaceUrl: true, skipLocationChange: false },
-            );
+            this.router.navigate(['/director/events', created.internalId], { replaceUrl: true });
           },
-          error: (err: unknown) => {
-            console.error('Error al crear evento:', err);
-            this.error.set('No se pudo crear el evento. Por favor, intenta nuevamente.');
-            this.isSaving.set(false);
-          },
+          error: (err: unknown) =>
+            this._handleSaveError(err, 'No se pudo crear el evento. Por favor, intenta nuevamente.'),
         });
       } else {
-        const id = ev!.id ?? ev!.internalId;
-        this.directorApi.updateEvent(id, payload).subscribe({
+        this.directorApi.updateEvent(ev!.internalId, payload).subscribe({
           next: (updated) => {
             this.event.set(updated);
             this.isSaving.set(false);
             this._restoreReadMode();
           },
-          error: (err: unknown) => {
-            console.error('Error al guardar evento:', err);
-            this.error.set('No se pudieron guardar los cambios. Por favor, intenta nuevamente.');
-            this.isSaving.set(false);
-          },
+          error: (err: unknown) =>
+            this._handleSaveError(err, 'No se pudieron guardar los cambios. Por favor, intenta nuevamente.'),
         });
       }
     });
   }
 
-  /** Agrega un control vacío al FormArray de fotos */
   addPhoto(): void {
     this.photosArray.push(this.fb.control(''));
     this.form.markAsDirty();
   }
 
-  /** Elimina la foto en la posición dada del FormArray */
   removePhoto(index: number): void {
     this.photosArray.removeAt(index);
     this.form.markAsDirty();
@@ -366,9 +401,8 @@ export class EventDetailComponent implements OnInit {
     dialogRef.afterClosed().subscribe((confirmed: boolean) => {
       if (!confirmed) return;
 
-      const id = ev.id ?? ev.internalId;
       this.loading.set(true);
-      this.directorApi.deleteEvent(id).subscribe({
+      this.directorApi.deleteEvent(ev.internalId).subscribe({
         next: () => this.router.navigate(['/director/events']),
         error: (err: unknown) => {
           console.error('Error al eliminar evento:', err);
@@ -379,12 +413,164 @@ export class EventDetailComponent implements OnInit {
     });
   }
 
-  // ── Internos ───────────────────────────────────────────────────────────────
+  /** Los nombres coinciden con `EventWrite` para que `fieldError.field` apunte al control. */
+  private _buildForm(): FormGroup {
+    const off = <T>(value: T) => ({ value, disabled: true });
+    const required = Validators.required;
 
-  /**
-   * Restaura el formulario con los valores del Signal event() (sin llamar a la API)
-   * y deshabilita todos los controles volviendo al modo lectura.
-   */
+    return this.fb.group({
+      internalId:             [off(''), required],
+      title:                  [off(''), required],
+      type:                   [off<string | null>(null), required],
+      sportId:                [off<number | null>(null)],
+      eventDate:              [off<Date | null>(null), [required, this._startAfterEnd()]],
+      startTime:              [off<Date | null>(null), required],
+      endDate:                [off<Date | null>(null), [required, this._endBeforeStart('endDate')]],
+      endTime:                [off<Date | null>(null), [required, this._endBeforeStart('endTime')]],
+      status:                 [off(''), required],
+      isOfficial:             [off(false)],
+      location:               [off('')],
+      address:                [off('')],
+      description:            [off(''), required],
+      descriptionOpt:         [off('')],
+      coverImage:             [off(''), required],
+      photos:                 this.fb.array([]),
+      organizerInstitutionId: [off<number | null>(null)],
+      organizerCampusId:      [off<number | null>(null)],
+      organizerTeamId:        [off<number | null>(null)],
+      teamOneInstitutionId:   [off<number | null>(null)],
+      teamOneCampusId:        [off<number | null>(null)],
+      teamOneId:              [off<number | null>(null)],
+      teamTwoInstitutionId:   [off<number | null>(null)],
+      teamTwoCampusId:        [off<number | null>(null)],
+      teamTwoId:              [off<number | null>(null), this._matchupValidator()],
+      delegateOid:            [off<string | null>(null)],
+    });
+  }
+
+  private _watchForm(): void {
+    const get = (name: string) => this.form.get(name)!;
+    const until = takeUntilDestroyed<unknown>(this.destroyRef);
+
+    get('type').valueChanges.pipe(until).subscribe((type) => {
+      this.typeValue.set(type as string | null);
+      this._applyTypeRules();
+    });
+    get('sportId').valueChanges.pipe(until).subscribe((id) => this.sportValue.set(id as number | null));
+    get('delegateOid').valueChanges.pipe(until).subscribe((oid) => this.delegateValue.set(oid as string | null));
+
+    merge(
+      get('eventDate').valueChanges,
+      get('startTime').valueChanges,
+      get('endDate').valueChanges,
+      get('endTime').valueChanges,
+    )
+      .pipe(until)
+      .subscribe(() => {
+        get('eventDate').updateValueAndValidity({ emitEvent: false });
+        get('endDate').updateValueAndValidity({ emitEvent: false });
+        get('endTime').updateValueAndValidity({ emitEvent: false });
+      });
+
+    get('teamOneId').valueChanges.pipe(until).subscribe(() =>
+      get('teamTwoId').updateValueAndValidity({ emitEvent: false }),
+    );
+  }
+
+  private _applyTypeRules(): void {
+    const matchup = this.requiresMatchup();
+    this._setRequired('sportId', matchup);
+    this._setRequired('delegateOid', matchup);
+    MATCHUP_FIELDS.forEach((name) => this._setRequired(name, matchup));
+    ORGANIZER_REQUIRED.forEach((name) => this._setRequired(name, this.hasType() && !matchup));
+    this.form.get('teamTwoId')?.updateValueAndValidity({ emitEvent: false });
+  }
+
+  private _setRequired(name: string, required: boolean): void {
+    const control = this.form.get(name);
+    if (!control) return;
+    if (required && !control.hasValidator(Validators.required)) {
+      control.addValidators(Validators.required);
+    } else if (!required && control.hasValidator(Validators.required)) {
+      control.removeValidators(Validators.required);
+    }
+    control.updateValueAndValidity({ emitEvent: false });
+  }
+
+  private _startAfterEnd(): ValidatorFn {
+    return (control) => {
+      const start = asLocalIsoDate(control.value);
+      const end = asLocalIsoDate(control.parent?.get('endDate')?.value);
+      return start && end && start > end ? { startAfterEnd: true } : null;
+    };
+  }
+
+  /** Marca endDate si es otro día, endTime si es el mismo. */
+  private _endBeforeStart(field: 'endDate' | 'endTime'): ValidatorFn {
+    return (control) => {
+      const group = control.parent;
+      if (!group) return null;
+      const value = (name: string) => group.get(name)?.value;
+      const wrong = endBeforeStartField(
+        asLocalIsoDate(value('eventDate')),
+        asLocalTime(value('startTime')),
+        asLocalIsoDate(value('endDate')),
+        asLocalTime(value('endTime')),
+      );
+      return wrong === field ? { endBeforeStart: true } : null;
+    };
+  }
+
+  /** Ni el mismo equipo ni otra división. */
+  private _matchupValidator(): ValidatorFn {
+    return (control) => {
+      if (!control.parent || control.value === null || !this.requiresMatchup()) return null;
+      if (control.value === control.parent.get('teamOneId')?.value) return { sameTeam: true };
+
+      const one = this.teamOneSelected();
+      const two = this.teamTwoSelected();
+      const comparable = one?.division && two?.division && two.id === control.value;
+      return comparable && one!.division !== two!.division ? { divisionMismatch: true } : null;
+    };
+  }
+
+  private _loadEventTypes(): void {
+    this.catalog.getEventTypes().subscribe({
+      next: (types) => {
+        this.eventTypes.set(types);
+        this._applyTypeRules();
+      },
+      error: () => this.eventTypes.set([]),
+    });
+  }
+
+  private _loadCatalogs(): void {
+    if (this.catalogsRequested) return;
+    this.catalogsRequested = true;
+
+    this.catalog.getSports().subscribe({
+      next: (sports) => this.sports.set(sports),
+      error: () => this.sportsError.set(true),
+    });
+
+    // TEMPORAL (solo desarrollo): lee Graph desde el navegador del director y expone
+    // a todo el directorio. Volver a `this.catalog.getDelegates()` cuando el BFF
+    // tenga GET /api/v1/delegates.
+    this.devDelegates.getDelegates().subscribe({
+      next: (delegates) => {
+        this.delegates.set(delegates);
+        this.delegatesLoaded.set(true);
+      },
+      error: () => this.delegatesError.set('No se pudo cargar la lista de delegados.'),
+    });
+  }
+
+  private _handleSaveError(err: unknown, message: string): void {
+    console.error('Error al guardar evento:', err);
+    this.isSaving.set(false);
+    this.error.set(message);
+  }
+
   private _restoreReadMode(): void {
     const ev = this.event();
     if (ev) this._patchForm(ev);
@@ -394,61 +580,87 @@ export class EventDetailComponent implements OnInit {
     this.isEdit.set(false);
   }
 
-  /**
-   * Construye el payload para updateEvent() desde los valores actuales del formulario.
-   * Serializa la fecha como string "yyyy-MM-dd" que espera el backend.
-   */
-  private _buildPayload(): Partial<AthenetEvent> {
+  /** Trae todas las claves; las del bloque que no aplica van en `null`. */
+  private _buildPayload(): EventWrite {
     const raw = this.form.getRawValue();
-    const eventDate = raw.eventDate instanceof Date
-      ? raw.eventDate.toISOString().split('T')[0]
-      : (raw.eventDate ?? '');
-    
-    const originalEvent = this.event();
+    const matchup = this.requiresMatchup();
+    const id = (name: string): number | null => raw[name] ?? null;
+    const matchupId = (name: string) => (matchup ? id(name) : null);
+    const organizerId = (name: string) => (matchup ? null : id(name));
+    const text = (value: string | null | undefined) => (value?.trim() ? value.trim() : null);
+
+    const original = this.event();
     const internalId = this.isCreateMode()
-      ? (raw.internalId ? String(raw.internalId).trim() : '')
-      : (originalEvent?.internalId ?? raw.internalId ?? '');
+      ? String(raw.internalId ?? '').trim()
+      : (original?.internalId ?? raw.internalId ?? '');
+
+    const delegate = this.delegateOptions().find((d) => d.oid === raw.delegateOid) ?? null;
 
     return {
-      ...raw,
-      id: originalEvent?.id,
       internalId,
-      eventDate,
-      photos: (this.photosArray.getRawValue() as string[]).filter((u: string) => u.trim() !== ''),
+      title: raw.title,
+      description: raw.description,
+      descriptionOpt: text(raw.descriptionOpt),
+      type: raw.type,
+      status: raw.status,
+      isOfficial: !!raw.isOfficial,
+      eventDate: asLocalIsoDate(raw.eventDate) ?? '',
+      startTime: asLocalTime(raw.startTime) ?? '',
+      endDate: asLocalIsoDate(raw.endDate) ?? '',
+      endTime: asLocalTime(raw.endTime) ?? '',
+      location: text(raw.location),
+      address: text(raw.address),
+      coverImage: raw.coverImage,
+      photos: (this.photosArray.getRawValue() as string[]).filter((u) => u.trim() !== ''),
+      sportId: id('sportId'),
+      organizerInstitutionId: organizerId('organizerInstitutionId'),
+      organizerCampusId: organizerId('organizerCampusId'),
+      organizerTeamId: organizerId('organizerTeamId'),
+      teamOneInstitutionId: matchupId('teamOneInstitutionId'),
+      teamOneCampusId: matchupId('teamOneCampusId'),
+      teamOneId: matchupId('teamOneId'),
+      teamTwoInstitutionId: matchupId('teamTwoInstitutionId'),
+      teamTwoCampusId: matchupId('teamTwoCampusId'),
+      teamTwoId: matchupId('teamTwoId'),
+      delegateOid: delegate?.oid ?? null,
+      delegateDisplayName: delegate?.displayName ?? null,
     };
   }
 
-  private _patchForm(ev: AthenetEvent): void {
-    // Reconstruir el FormArray de photos (siempre disabled al patchear)
+  private _patchForm(ev: EventRead): void {
     const photosArray = this.form.get('photos') as FormArray;
     photosArray.clear();
     (ev.photos ?? []).forEach((url) => {
       photosArray.push(this.fb.control({ value: url, disabled: true }));
     });
 
-    // Parsear la fecha: el backend devuelve "yyyy-MM-dd"
-    let eventDateValue: Date | null = null;
-    if (ev.eventDate) {
-      const parsed = new Date(ev.eventDate);
-      eventDateValue = isNaN(parsed.getTime()) ? null : parsed;
-    }
-
     this.form.patchValue({
-      internalId:     ev.internalId ?? '',
-      title:          ev.title,
-      category:       ev.category,
-      type:           ev.type ?? '',
-      eventDate:      eventDateValue,
-      status:         ev.status,
-      isOfficial:     ev.isOfficial,
-      location:       ev.location,
-      address:        ev.address ?? '',
-      description:    ev.description ?? '',
-      descriptionOpt: ev.descriptionOpt ?? '',
-      coverImage:     ev.coverImage ?? '',
-      organizationId: ev.organizationId ?? null,
-      teamOneId:      ev.teamOneId ?? null,
-      teamTwoId:      ev.teamTwoId ?? null,
+      internalId:             ev.internalId ?? '',
+      title:                  ev.title,
+      type:                   ev.type ?? null,
+      sportId:                ev.sport?.id ?? null,
+      eventDate:              parseLocalIsoDate(ev.eventDate),
+      startTime:              parseLocalTime(ev.startTime),
+      endDate:                parseLocalIsoDate(ev.endDate),
+      endTime:                parseLocalTime(ev.endTime),
+      status:                 ev.status,
+      isOfficial:             ev.isOfficial,
+      location:               ev.location ?? '',
+      address:                ev.address ?? '',
+      description:            ev.description ?? '',
+      descriptionOpt:         ev.descriptionOpt ?? '',
+      coverImage:             ev.coverImage ?? '',
+      organizerInstitutionId: ev.organizer?.institution.id ?? null,
+      organizerCampusId:      ev.organizer?.campus.id ?? null,
+      organizerTeamId:        ev.organizer?.team?.id ?? null,
+      teamOneInstitutionId:   ev.teamOne?.institution.id ?? null,
+      teamOneCampusId:        ev.teamOne?.campus.id ?? null,
+      teamOneId:              ev.teamOne?.id ?? null,
+      teamTwoInstitutionId:   ev.teamTwo?.institution.id ?? null,
+      teamTwoCampusId:        ev.teamTwo?.campus.id ?? null,
+      teamTwoId:              ev.teamTwo?.id ?? null,
+      delegateOid:            ev.delegate?.oid ?? null,
     });
+    this._applyTypeRules();
   }
 }

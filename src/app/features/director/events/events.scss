@@ -73,6 +73,11 @@
   color: var(--color-text-heading);
 }
 
+.muted-cell {
+  color: var(--color-text-subtle);
+  font-style: italic;
+}
+
 .date-cell, .location-cell {
   display: inline-flex;
   align-items: center;

@@ -42,23 +42,30 @@
       <span class="event-title">{{ row.title }}</span>
     </ng-template>
 
-    <!-- 3. Categoría -->
-    <ng-template tableCell="category" let-row>
-      <app-pill variant="neutral">{{ getCategoryLabel(row.category) }}</app-pill>
+    <!-- 3. Deporte -->
+    <ng-template tableCell="sport.name" let-row>
+      @if (row.sport) {
+        <app-pill variant="neutral">{{ row.sport.name ?? 'Deporte eliminado' }}</app-pill>
+      } @else {
+        <span class="muted-cell">Sin deporte</span>
+      }
     </ng-template>
 
     <!-- 4. Fecha -->
     <ng-template tableCell="eventDate" let-row>
       <span class="date-cell">
         <mat-icon class="inline-icon">calendar_today</mat-icon>
-        {{ row.eventDate | date:'dd/MM/yyyy' }}
+        {{ row.eventDate | date:'dd/MM/yyyy' }} {{ row.startTime }}
+        @if (row.endDate && row.endDate !== row.eventDate) {
+          → {{ row.endDate | date:'dd/MM' }}
+        }
       </span>
     </ng-template>
 
     <!-- 5. Estado -->
     <ng-template tableCell="status" let-row>
-      <app-pill [variant]="getStatusVariant(row.status)" [dot]="true">
-        {{ getStatusLabel(row.status) }}
+      <app-pill [variant]="status[row.status].variant" [dot]="true">
+        {{ status[row.status].label }}
       </app-pill>
     </ng-template>
 

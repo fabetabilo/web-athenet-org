@@ -4,37 +4,81 @@ import { provideAnimations } from '@angular/platform-browser/animations';
 import { MatDialog } from '@angular/material/dialog';
 import { Router } from '@angular/router';
 import { DirectorEventsComponent } from './events';
-import {
-  DirectorApiService,
-  AthenetEvent,
-} from '../services/director-api.service';
+import { DirectorApiService } from '../services/director-api.service';
+import type { EventRead } from '../services/bff';
 
 describe('DirectorEventsComponent', () => {
+  /** Partido que cruza la medianoche, con la forma de lectura del BFF. */
+  const MATCH_EVENT: EventRead = {
+    id: 42,
+    internalId: 'EVT-42',
+    title: 'Clásico universitario de fútbol',
+    description: 'Final del torneo interuniversitario.',
+    descriptionOpt: null,
+    type: 'MATCH',
+    status: 'PUBLISHED',
+    isOfficial: true,
+    eventDate: '2026-10-24',
+    startTime: '22:00',
+    endDate: '2026-10-25',
+    endTime: '00:30',
+    location: 'Estadio USACH',
+    address: null,
+    coverImage: 'https://example.com/cover.jpg',
+    photos: [],
+    sport: { id: 3, name: 'Fútbol' },
+    organizer: null,
+    teamOne: {
+      id: 100,
+      name: 'USACH Fútbol Varones',
+      division: 'MASCULINO',
+      campus: { id: 10, name: 'Casa Central' },
+      institution: { id: 1, name: 'Universidad de Santiago de Chile', acronym: 'USACH' },
+    },
+    teamTwo: {
+      id: 200,
+      name: 'U. de Chile Fútbol Varones',
+      division: 'MASCULINO',
+      campus: { id: 20, name: 'Campus Juan Gómez Millas' },
+      institution: { id: 2, name: 'Universidad de Chile', acronym: 'UCH' },
+    },
+    delegate: { oid: '3f2b9c1e-5a7d-4c1b-9e2f-1d0a8b6c4e21', displayName: 'María Pérez' },
+  };
+
+  /** Jornada de varios días, sin deporte, organizada por una institución. */
+  const TRACKDAY_EVENT: EventRead = {
+    ...MATCH_EVENT,
+    id: 43,
+    internalId: 'EVT-43',
+    title: 'Jornada de pista de primavera',
+    type: 'TRACKDAY',
+    status: 'DRAFT',
+    isOfficial: false,
+    eventDate: '2026-11-06',
+    startTime: '09:00',
+    endDate: '2026-11-08',
+    endTime: '18:00',
+    sport: null,
+    organizer: {
+      institution: { id: 1, name: 'Universidad de Santiago de Chile', acronym: 'USACH' },
+      campus: { id: 10, name: 'Casa Central' },
+      team: null,
+    },
+    teamOne: null,
+    teamTwo: null,
+    delegate: null,
+  };
+
   let component: DirectorEventsComponent;
   let fixture: ComponentFixture<DirectorEventsComponent>;
-  let apiServiceMock: { getAllAdminEvents: any; getEvents: any; deleteEvent: any };
+  let apiServiceMock: { getEvents: any; deleteEvent: any };
   let dialogMock: { open: any };
   let routerMock: { navigate: any };
 
-  const mockEvents: AthenetEvent[] = [
-    {
-      internalId: 'EVT-1',
-      title: 'Campeonato Sudamericano',
-      category: 'TENIS_MESA',
-      eventDate: '2026-09-24',
-      status: 'PUBLISHED',
-      isOfficial: true,
-      location: 'Santiago, Chile',
-    },
-    {
-      internalId: 'EVT-2',
-      title: 'Copa Femenina',
-      category: 'FUTBOL',
-      eventDate: '2026-10-04',
-      status: 'DRAFT',
-      isOfficial: false,
-      location: 'Concepción, Chile',
-    },
+  // Un partido de fútbol y una jornada sin deporte, con la forma del contrato del BFF.
+  const mockEvents: EventRead[] = [
+    { ...MATCH_EVENT, internalId: 'EVT-1', title: 'Campeonato Sudamericano' },
+    { ...TRACKDAY_EVENT, internalId: 'EVT-2', title: 'Copa Femenina' },
   ];
 
   beforeEach(async () => {
@@ -43,7 +87,6 @@ describe('DirectorEventsComponent', () => {
     };
 
     apiServiceMock = {
-      getAllAdminEvents: vi.fn().mockReturnValue(of(mockEvents)),
       getEvents: vi.fn().mockReturnValue(of(mockEvents)),
       deleteEvent: vi.fn().mockReturnValue(of(undefined)),
     };
@@ -68,23 +111,23 @@ describe('DirectorEventsComponent', () => {
     component = fixture.componentInstance;
   });
 
-  it('debe crearse y llamar a getAllAdminEvents() al inicializar', () => {
+  it('debe crearse y llamar a getEvents() al inicializar', () => {
     fixture.detectChanges();
     expect(component).toBeTruthy();
-    expect(apiServiceMock.getAllAdminEvents).toHaveBeenCalledTimes(1);
+    expect(apiServiceMock.getEvents).toHaveBeenCalledTimes(1);
     expect(component['events']().length).toBe(2);
     expect(component['loading']()).toBe(false);
     expect(component['error']()).toBeNull();
   });
 
-  it('debe renderizar filas en la tabla cuando getAllAdminEvents() responde con éxito', () => {
+  it('debe renderizar filas en la tabla cuando getEvents() responde con éxito', () => {
     fixture.detectChanges();
     const rows = fixture.nativeElement.querySelectorAll('.app-table-row');
     expect(rows.length).toBe(2);
   });
 
-  it('debe mostrar banner de error cuando getAllAdminEvents() falla y permitir reintento', () => {
-    apiServiceMock.getAllAdminEvents.mockReturnValue(
+  it('debe mostrar banner de error cuando getEvents() falla y permitir reintento', () => {
+    apiServiceMock.getEvents.mockReturnValue(
       throwError(() => new Error('Connection refused')),
     );
 
@@ -99,30 +142,29 @@ describe('DirectorEventsComponent', () => {
     expect(errorBanner.textContent).toContain('No se pudo conectar con el servidor');
 
     // Simula reintento exitoso
-    apiServiceMock.getAllAdminEvents.mockReturnValue(of(mockEvents));
+    apiServiceMock.getEvents.mockReturnValue(of(mockEvents));
     const retryBtn = fixture.nativeElement.querySelector('.retry-btn');
     expect(retryBtn).not.toBeNull();
     retryBtn.click();
     fixture.detectChanges();
 
-    expect(apiServiceMock.getAllAdminEvents).toHaveBeenCalledTimes(2);
+    expect(apiServiceMock.getEvents).toHaveBeenCalledTimes(2);
     expect(component['error']()).toBeNull();
     expect(component['events']().length).toBe(2);
   });
 
-  it('debe mapear correctamente etiquetas de categoría y estado', () => {
-    expect(component.getCategoryLabel('TENIS_MESA')).toBe('Tenis de Mesa');
-    expect(component.getCategoryLabel('FUTBOL')).toBe('Fútbol');
-    expect(component.getCategoryLabel('OTRA')).toBe('OTRA');
+  it('debe mostrar el deporte del catálogo y "Sin deporte" cuando no tiene', () => {
+    fixture.detectChanges();
+    const text = fixture.nativeElement.textContent;
+    expect(text).toContain('Fútbol');
+    expect(text).toContain('Sin deporte');
+  });
 
-    expect(component.getStatusLabel('PUBLISHED')).toBe('Publicado');
-    expect(component.getStatusLabel('DRAFT')).toBe('Borrador');
-    expect(component.getStatusLabel('CANCELLED')).toBe('Cancelado');
-
-    expect(component.getStatusVariant('PUBLISHED')).toBe('success');
-    expect(component.getStatusVariant('DRAFT')).toBe('warning');
-    expect(component.getStatusVariant('CANCELLED')).toBe('danger');
-    expect(component.getStatusVariant('UNKNOWN')).toBe('neutral');
+  it('debe mostrar la hora de inicio y el día de término cuando es otro día', () => {
+    fixture.detectChanges();
+    const text = fixture.nativeElement.textContent;
+    expect(text).toContain('24/10/2026 22:00');
+    expect(text).toContain('→ 25/10');
   });
 
   it('debe renderizar el botón "+ Nuevo Evento" y responder al click', () => {

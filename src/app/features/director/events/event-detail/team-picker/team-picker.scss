@@ -1,0 +1,27 @@
+.team-picker {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2);
+}
+
+.team-picker-label {
+  font-size: 0.8125rem;
+  font-weight: 600;
+  color: var(--color-text-body);
+}
+
+.team-picker-grid {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: var(--space-4);
+
+  mat-form-field {
+    width: 100%;
+  }
+}
+
+@media (max-width: 900px) {
+  .team-picker-grid {
+    grid-template-columns: 1fr;
+  }
+}
