@@ -1,13 +1,13 @@
 import { Injectable, inject } from '@angular/core';
 import { Observable, map } from 'rxjs';
 import { UserApiService } from '../../admin/services/user-api.service';
-import type { DelegateRef } from './bff';
+import type { Delegate } from './bff';
 
 /**
  * ⚠️  TEMPORAL — SOLO PARA DESARROLLO. NO DEBE LLEGAR A PRODUCCIÓN.  ⚠️
  *
- * Existe únicamente para no bloquear el formulario de eventos mientras el BFF
- * no expone `GET /api/v1/delegates` (ver `EventCatalogService.getDelegates`).
+ * Según el contrato con el BFF, el dropdown de delegados no pasa por el BFF y
+ * se sigue armando desde Microsoft Graph. Este servicio lo hace mientras tanto.
  *
  * Problema de seguridad: reutiliza la lectura de Graph de admin
  * (`UserApiService.getDirectory`) con el token DELEGADO del director. Ese token
@@ -22,13 +22,13 @@ import type { DelegateRef } from './bff';
  * directa a Graph.
  *
  * Para retirarlo: borrar este archivo y su spec, y en `EventDetailComponent`
- * cambiar `devDelegates.getDelegates()` por `catalog.getDelegates()`.
+ * cambiar `devDelegates.getDelegates()` por el endpoint que se acuerde.
  */
 @Injectable({ providedIn: 'root' })
 export class DevDelegatesService {
   private readonly userApi = inject(UserApiService);
 
-  getDelegates(): Observable<DelegateRef[]> {
+  getDelegates(): Observable<Delegate[]> {
     return this.userApi.getDirectory().pipe(
       map(({ users }) =>
         users

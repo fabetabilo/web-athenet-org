@@ -5,12 +5,12 @@ import { of, throwError } from 'rxjs';
 import { MsalService } from '@azure/msal-angular';
 import { InteractionRequiredAuthError } from '@azure/msal-browser';
 import { DirectorApiService } from './director-api.service';
-import { bffBaseUrl, type EventRead, type EventWrite } from './bff';
+import { HttpErrorResponse } from '@angular/common/http';
+import { bffDirectorUrl, type DirectorEvent, type EventWrite } from './bff';
 
 describe('DirectorApiService', () => {
   /** Partido que cruza la medianoche, con la forma de lectura del BFF. */
-  const MATCH_EVENT: EventRead = {
-    id: 42,
+  const MATCH_EVENT: DirectorEvent = {
     internalId: 'EVT-42',
     title: 'Clásico universitario de fútbol',
     description: 'Final del torneo interuniversitario.',
@@ -46,9 +46,8 @@ describe('DirectorApiService', () => {
   };
 
   /** Jornada de varios días, sin deporte, organizada por una institución. */
-  const TRACKDAY_EVENT: EventRead = {
+  const TRACKDAY_EVENT: DirectorEvent = {
     ...MATCH_EVENT,
-    id: 43,
     internalId: 'EVT-43',
     title: 'Jornada de pista de primavera',
     type: 'TRACKDAY',
@@ -69,7 +68,7 @@ describe('DirectorApiService', () => {
     delegate: null,
   };
 
-  const eventsUrl = `${bffBaseUrl()}/events`;
+  const eventsUrl = `${bffDirectorUrl()}/events`;
   const account = { homeAccountId: 'home-1', username: 'director@athenet.cl' } as any;
 
   let service: DirectorApiService;
@@ -104,6 +103,10 @@ describe('DirectorApiService', () => {
   });
 
   afterEach(() => httpTesting.verify());
+
+  it('debe usar la ruta del director en el BFF', () => {
+    expect(eventsUrl).toMatch(/[^/]\/api\/director\/events$/);
+  });
 
   it('debe listar los eventos con el access token de la API, no con el idToken', () => {
     let eventos: any[] = [];
@@ -170,8 +173,41 @@ describe('DirectorApiService', () => {
 
     httpTesting
       .expectOne(`${eventsUrl}/EVT-999`)
-      .flush({ status: 404, code: 'EVENT_NOT_FOUND' }, { status: 404, statusText: 'Not Found' });
+      .flush(
+        { status: 404, code: 'NOT_FOUND', message: 'El evento EVT-999 no existe.', fieldErrors: [] },
+        { status: 404, statusText: 'Not Found' },
+      );
     expect(status).toBe(404);
+  });
+
+  it('debe renovar el token y reintentar una vez si el BFF responde 401', () => {
+    msalMock.acquireTokenSilent
+      .mockReturnValueOnce(of({ accessToken: 'token-vencido' }))
+      .mockReturnValueOnce(of({ accessToken: 'token-renovado' }));
+    let eventos: DirectorEvent[] = [];
+    service.getEvents().subscribe((lista) => (eventos = lista));
+
+    const primera = httpTesting.expectOne(eventsUrl);
+    expect(primera.request.headers.get('Authorization')).toBe('Bearer token-vencido');
+    primera.flush(null, { status: 401, statusText: 'Unauthorized' });
+
+    const segunda = httpTesting.expectOne(eventsUrl);
+    expect(segunda.request.headers.get('Authorization')).toBe('Bearer token-renovado');
+    expect(msalMock.acquireTokenSilent.mock.calls[1][0].forceRefresh).toBe(true);
+    segunda.flush([MATCH_EVENT]);
+
+    expect(eventos.length).toBe(1);
+  });
+
+  it('debe propagar el 401 si el token renovado tampoco sirve', () => {
+    let error: unknown;
+    service.getEvents().subscribe({ error: (err) => (error = err) });
+
+    httpTesting.expectOne(eventsUrl).flush(null, { status: 401, statusText: 'Unauthorized' });
+    httpTesting.expectOne(eventsUrl).flush(null, { status: 401, statusText: 'Unauthorized' });
+
+    expect(error).toBeInstanceOf(HttpErrorResponse);
+    expect((error as HttpErrorResponse).status).toBe(401);
   });
 
   it('debe fallar sin hacer la petición si MSAL no tiene cuenta', () => {

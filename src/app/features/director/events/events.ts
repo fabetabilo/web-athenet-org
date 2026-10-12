@@ -13,7 +13,7 @@ import { PillComponent } from '../../../shared/components/pill/pill';
 import { ButtonComponent } from '../../../shared/components/button/button';
 import { ConfirmDialogComponent } from '../../../shared/components/confirm-dialog/confirm-dialog';
 import { DirectorApiService } from '../services/director-api.service';
-import type { EventRead } from '../services/bff';
+import { bffErrorMessage, type DirectorEvent } from '../services/bff';
 import { EVENT_STATUS, STATUS_OPTIONS } from './event-status';
 
 @Component({
@@ -37,7 +37,7 @@ export class DirectorEventsComponent implements OnInit {
   private readonly dialog = inject(MatDialog);
   private readonly router = inject(Router);
 
-  protected readonly columns: TableColumn<EventRead>[] = [
+  protected readonly columns: TableColumn<DirectorEvent>[] = [
     {
       key: 'internalId',
       header: 'ID',
@@ -105,7 +105,7 @@ export class DirectorEventsComponent implements OnInit {
   ];
 
   // Estado reactivo para la tabla alimentada desde la API
-  protected readonly events = signal<EventRead[]>([]);
+  protected readonly events = signal<DirectorEvent[]>([]);
   protected readonly loading = signal<boolean>(true);
   protected readonly error = signal<string | null>(null);
 
@@ -125,7 +125,10 @@ export class DirectorEventsComponent implements OnInit {
       error: (err) => {
         console.error('Error al obtener eventos desde DirectorApiService:', err);
         this.error.set(
-          'No se pudo conectar con el servidor para obtener los eventos. Verifica que el backend esté en ejecución.',
+          bffErrorMessage(
+            err,
+            'No se pudo conectar con el servidor para obtener los eventos. Verifica que el backend esté en ejecución.',
+          ),
         );
         this.loading.set(false);
         this.events.set([]);
@@ -135,17 +138,17 @@ export class DirectorEventsComponent implements OnInit {
 
   protected readonly status = EVENT_STATUS;
 
-  onRowClick(event: EventRead): void {
+  onRowClick(event: DirectorEvent): void {
     this.router.navigate(['/director/events', event.internalId]);
   }
 
-  onEdit(event: EventRead): void {
+  onEdit(event: DirectorEvent): void {
     this.router.navigate(['/director/events', event.internalId], {
       queryParams: { mode: 'edit' },
     });
   }
 
-  onDelete(event: EventRead): void {
+  onDelete(event: DirectorEvent): void {
     const dialogRef = this.dialog.open(ConfirmDialogComponent, {
       data: {
         title: 'Confirmación de Eliminación',
@@ -176,7 +179,7 @@ export class DirectorEventsComponent implements OnInit {
         error: (err) => {
           console.error('Error al eliminar evento:', err);
           this.error.set(
-            `No se pudo eliminar el evento "${event.title}". Por favor, intenta nuevamente.`,
+            bffErrorMessage(err, `No se pudo eliminar el evento "${event.title}". Por favor, intenta nuevamente.`),
           );
           this.loading.set(false);
         },

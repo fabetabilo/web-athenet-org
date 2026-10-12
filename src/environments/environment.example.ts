@@ -3,6 +3,6 @@ export const environment = {
     tenantId: 'REEMPLAZAR_CON_DIRECTORY_TENANT_ID',
     redirectUri: 'http://localhost:4200',
     apiUrl: 'http://localhost:8080',
-    bffUrl: 'http://localhost:8081',
+    bffUrl: 'http://localhost:8087',
     inactivityMinutes: 30,
 }

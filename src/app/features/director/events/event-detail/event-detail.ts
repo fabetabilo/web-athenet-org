@@ -18,7 +18,7 @@ import { MatTimepickerModule } from '@angular/material/timepicker';
 import { MatNativeDateModule } from '@angular/material/core';
 import { MatIconModule } from '@angular/material/icon';
 import { MatDialog } from '@angular/material/dialog';
-import { merge, of, switchMap } from 'rxjs';
+import { EMPTY, Subject, catchError, merge, of, startWith, switchMap } from 'rxjs';
 
 import { ButtonComponent } from '../../../../shared/components/button/button';
 import { PillComponent } from '../../../../shared/components/pill/pill';
@@ -36,13 +36,16 @@ import {
 import { DirectorApiService } from '../../services/director-api.service';
 import { EventCatalogService } from '../../services/event-catalog.service';
 import { DevDelegatesService } from '../../services/dev-delegates.service';
-import type {
-  DelegateRef,
-  EventRead,
-  EventType,
-  EventWrite,
-  Sport,
-  Team,
+import {
+  bffErrorMessage,
+  isRetryableBffError,
+  type Delegate,
+  type DirectorEvent,
+  type EventTypeOption,
+  type EventWrite,
+  type SportOption,
+  type SportRef,
+  type TeamRef,
 } from '../../services/bff';
 import { EVENT_STATUS, STATUS_OPTIONS } from '../event-status';
 import { controlErrorMessage } from './control-error';
@@ -99,18 +102,21 @@ export class EventDetailComponent implements OnInit {
   private readonly fb = inject(FormBuilder);
   private readonly destroyRef = inject(DestroyRef);
 
-  protected readonly event    = signal<EventRead | null>(null);
+  protected readonly event    = signal<DirectorEvent | null>(null);
   protected readonly loading  = signal<boolean>(true);
   protected readonly error    = signal<string | null>(null);
+  /** La carga falló por un error temporal del BFF (`503`): se ofrece reintentar. */
+  protected readonly canRetryLoad = signal<boolean>(false);
+  private readonly reload$ = new Subject<void>();
   protected readonly isEdit   = signal<boolean>(false);
   protected readonly isCreateMode = signal<boolean>(false);
   protected readonly isSaving = signal<boolean>(false);
 
   // Tipos: siempre. El resto: solo al crear o editar.
-  protected readonly eventTypes = signal<EventType[]>([]);
-  protected readonly sports = signal<Sport[]>([]);
+  protected readonly eventTypes = signal<EventTypeOption[]>([]);
+  protected readonly sports = signal<SportOption[]>([]);
   protected readonly sportsError = signal<boolean>(false);
-  protected readonly delegates = signal<DelegateRef[]>([]);
+  protected readonly delegates = signal<Delegate[]>([]);
   protected readonly delegatesLoaded = signal<boolean>(false);
   protected readonly delegatesError = signal<string | null>(null);
   private catalogsRequested = false;
@@ -119,8 +125,8 @@ export class EventDetailComponent implements OnInit {
   private readonly typeValue = signal<string | null>(null);
   protected readonly sportValue = signal<number | null>(null);
   private readonly delegateValue = signal<string | null>(null);
-  private readonly teamOneSelected = signal<Team | null>(null);
-  private readonly teamTwoSelected = signal<Team | null>(null);
+  private readonly teamOneSelected = signal<TeamRef | null>(null);
+  private readonly teamTwoSelected = signal<TeamRef | null>(null);
 
   protected readonly statusOptions = STATUS_OPTIONS;
   protected readonly status = EVENT_STATUS;
@@ -140,7 +146,7 @@ export class EventDetailComponent implements OnInit {
 
   protected readonly typeOptions = computed(() => {
     const ev = this.event();
-    const saved = ev && ev.type === this.typeValue()
+    const saved: EventTypeOption | null = ev && ev.type === this.typeValue()
       ? { code: ev.type, label: ev.type, requiresMatchup: false }
       : null;
     return withSelected(this.eventTypes(), saved, (t) => t.code);
@@ -148,7 +154,7 @@ export class EventDetailComponent implements OnInit {
 
   protected readonly sportOptions = computed(() => {
     const saved = this.event()?.sport;
-    return withSelected(this.sports(), saved?.id === this.sportValue() ? saved : null, (s) => s.id);
+    return withSelected<SportRef>(this.sports(), saved?.id === this.sportValue() ? saved : null, (s) => s.id);
   });
 
   protected readonly delegateOptions = computed(() => {
@@ -172,6 +178,8 @@ export class EventDetailComponent implements OnInit {
 
     this.route.paramMap
       .pipe(
+        // `reload$` repite la carga del mismo internalId (botón Reintentar).
+        switchMap((params) => this.reload$.pipe(startWith(undefined), switchMap(() => of(params)))),
         switchMap((params) => {
           const internalId = params.get('internalId') ?? '';
           if (internalId === 'new') {
@@ -182,7 +190,17 @@ export class EventDetailComponent implements OnInit {
           if (loaded && loaded.internalId === internalId) {
             return of(loaded);
           }
-          return this.directorApi.getEventByInternalId(internalId);
+          return this.directorApi.getEventByInternalId(internalId).pipe(
+            catchError((err: unknown) => {
+              console.error('Error al cargar evento:', err);
+              this.error.set(
+                bffErrorMessage(err, 'No se pudo cargar el evento. Verifica que el backend esté en ejecución.'),
+              );
+              this.canRetryLoad.set(isRetryableBffError(err));
+              this.loading.set(false);
+              return EMPTY;
+            }),
+          );
         }),
         takeUntilDestroyed(this.destroyRef),
       )
@@ -201,11 +219,14 @@ export class EventDetailComponent implements OnInit {
           this._patchForm(ev);
           this.loading.set(false);
         },
-        error: () => {
-          this.error.set('No se pudo cargar el evento. Verifica que el backend esté en ejecución.');
-          this.loading.set(false);
-        },
       });
+  }
+
+  onRetryLoad(): void {
+    this.error.set(null);
+    this.canRetryLoad.set(false);
+    this.loading.set(true);
+    this.reload$.next();
   }
 
   get photosArray(): FormArray {
@@ -217,17 +238,17 @@ export class EventDetailComponent implements OnInit {
   }
 
   /** Delegado guardado que ya no tiene el rol. */
-  protected delegateLabel(option: DelegateRef): string {
+  protected delegateLabel(option: Delegate): string {
     const stale = this.delegatesLoaded() && !this.delegates().some((d) => d.oid === option.oid);
     return stale ? `${option.displayName} (sin rol vigente)` : option.displayName;
   }
 
-  onTeamOneSelected(team: Team | null): void {
+  onTeamOneSelected(team: TeamRef | null): void {
     this.teamOneSelected.set(team);
     this.form.get('teamTwoId')?.updateValueAndValidity({ emitEvent: false });
   }
 
-  onTeamTwoSelected(team: Team | null): void {
+  onTeamTwoSelected(team: TeamRef | null): void {
     this.teamTwoSelected.set(team);
     this.form.get('teamTwoId')?.updateValueAndValidity({ emitEvent: false });
   }
@@ -406,7 +427,9 @@ export class EventDetailComponent implements OnInit {
         next: () => this.router.navigate(['/director/events']),
         error: (err: unknown) => {
           console.error('Error al eliminar evento:', err);
-          this.error.set(`No se pudo eliminar el evento "${ev.title}". Por favor, intenta nuevamente.`);
+          this.error.set(
+            bffErrorMessage(err, `No se pudo eliminar el evento "${ev.title}". Por favor, intenta nuevamente.`),
+          );
           this.loading.set(false);
         },
       });
@@ -553,9 +576,9 @@ export class EventDetailComponent implements OnInit {
       error: () => this.sportsError.set(true),
     });
 
-    // TEMPORAL (solo desarrollo): lee Graph desde el navegador del director y expone
-    // a todo el directorio. Volver a `this.catalog.getDelegates()` cuando el BFF
-    // tenga GET /api/v1/delegates.
+    // El dropdown de delegados no pasa por el BFF: se arma desde Graph.
+    // TEMPORAL (solo desarrollo): lee Graph desde el navegador del director y
+    // expone a todo el directorio; ver la advertencia en DevDelegatesService.
     this.devDelegates.getDelegates().subscribe({
       next: (delegates) => {
         this.delegates.set(delegates);
@@ -568,7 +591,7 @@ export class EventDetailComponent implements OnInit {
   private _handleSaveError(err: unknown, message: string): void {
     console.error('Error al guardar evento:', err);
     this.isSaving.set(false);
-    this.error.set(message);
+    this.error.set(bffErrorMessage(err, message));
   }
 
   private _restoreReadMode(): void {
@@ -627,7 +650,7 @@ export class EventDetailComponent implements OnInit {
     };
   }
 
-  private _patchForm(ev: EventRead): void {
+  private _patchForm(ev: DirectorEvent): void {
     const photosArray = this.form.get('photos') as FormArray;
     photosArray.clear();
     (ev.photos ?? []).forEach((url) => {
@@ -650,14 +673,14 @@ export class EventDetailComponent implements OnInit {
       description:            ev.description ?? '',
       descriptionOpt:         ev.descriptionOpt ?? '',
       coverImage:             ev.coverImage ?? '',
-      organizerInstitutionId: ev.organizer?.institution.id ?? null,
-      organizerCampusId:      ev.organizer?.campus.id ?? null,
+      organizerInstitutionId: ev.organizer?.institution?.id ?? null,
+      organizerCampusId:      ev.organizer?.campus?.id ?? null,
       organizerTeamId:        ev.organizer?.team?.id ?? null,
-      teamOneInstitutionId:   ev.teamOne?.institution.id ?? null,
-      teamOneCampusId:        ev.teamOne?.campus.id ?? null,
+      teamOneInstitutionId:   ev.teamOne?.institution?.id ?? null,
+      teamOneCampusId:        ev.teamOne?.campus?.id ?? null,
       teamOneId:              ev.teamOne?.id ?? null,
-      teamTwoInstitutionId:   ev.teamTwo?.institution.id ?? null,
-      teamTwoCampusId:        ev.teamTwo?.campus.id ?? null,
+      teamTwoInstitutionId:   ev.teamTwo?.institution?.id ?? null,
+      teamTwoCampusId:        ev.teamTwo?.campus?.id ?? null,
       teamTwoId:              ev.teamTwo?.id ?? null,
       delegateOid:            ev.delegate?.oid ?? null,
     });

@@ -80,10 +80,14 @@
 
     <!-- 7. Ubicación -->
     <ng-template tableCell="location" let-row>
-      <span class="location-cell">
-        <mat-icon class="inline-icon">location_on</mat-icon>
-        {{ row.location }}
-      </span>
+      @if (row.location) {
+        <span class="location-cell">
+          <mat-icon class="inline-icon">location_on</mat-icon>
+          {{ row.location }}
+        </span>
+      } @else {
+        <span class="muted-cell">Sin ubicación</span>
+      }
     </ng-template>
 
     <!-- 8. Acciones -->
