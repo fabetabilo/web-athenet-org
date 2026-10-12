@@ -18,12 +18,11 @@ import { EMPTY, Observable, catchError, distinctUntilChanged, merge, of, startWi
 
 import { EventCatalogService } from '../../../services/event-catalog.service';
 import type {
-  Campus,
-  Division,
-  Institution,
+  CampusRef,
+  InstitutionRef,
+  MatchTeam,
   Organizer,
-  Team,
-  TeamChain,
+  TeamRef,
 } from '../../../services/bff';
 import { controlErrorMessage } from '../control-error';
 
@@ -32,12 +31,12 @@ export type TeamPickerMode = 'matchup' | 'organizer';
 
 /** Cadena ya elegida, tal como la trae el GET del evento. */
 export interface CascadeSeed {
-  institution: Institution | null;
-  campus: Campus | null;
-  team: Team | null;
+  institution: InstitutionRef | null;
+  campus: CampusRef | null;
+  team: TeamRef | null;
 }
 
-export function seedFromTeam(chain: TeamChain | null | undefined): CascadeSeed | null {
+export function seedFromTeam(chain: MatchTeam | null | undefined): CascadeSeed | null {
   if (!chain) return null;
   const { campus, institution, ...team } = chain;
   return { institution, campus, team };
@@ -90,20 +89,21 @@ export class TeamPickerComponent implements OnInit {
   readonly team = input.required<FormControl<number | null>>();
   readonly seed = input<CascadeSeed | null>(null);
   /** El equipo 2 recibe la división del equipo 1. */
-  readonly division = input<Division | null>(null);
+  readonly division = input<string | null>(null);
   /** Oculta el equipo elegido al otro lado. */
   readonly excludeTeamId = input<number | null>(null);
 
-  readonly selectedTeam = output<Team | null>();
+  readonly selectedTeam = output<TeamRef | null>();
 
   private readonly institutionId = signal<number | null>(null);
   private readonly campusId = signal<number | null>(null);
   private readonly teamId = signal<number | null>(null);
   protected readonly editable = signal(false);
 
-  protected readonly institutions = new Level<Institution>();
-  protected readonly campuses = new Level<Campus>();
-  protected readonly teams = new Level<Team>();
+  // Las opciones del catálogo y la cadena guardada (`seed`) comparten forma.
+  protected readonly institutions = new Level<InstitutionRef>();
+  protected readonly campuses = new Level<CampusRef>();
+  protected readonly teams = new Level<TeamRef>();
 
   protected readonly isMatchup = computed(() => this.mode() === 'matchup');
   protected readonly waitingForSport = computed(() => this.isMatchup() && this.sportId() === null);

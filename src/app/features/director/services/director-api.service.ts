@@ -2,36 +2,39 @@ import { Injectable, inject } from '@angular/core';
 import { HttpClient } from '@angular/common/http';
 import { Observable } from 'rxjs';
 import { MsalService } from '@azure/msal-angular';
-import { bffBaseUrl, withBffToken, type EventRead, type EventWrite } from './bff';
+import { bffDirectorUrl, withBffToken, type DirectorEvent, type EventWrite } from './bff';
 
-/** CRUD de eventos en el BFF, direccionado por `internalId`. */
+/**
+ * CRUD de eventos en el BFF (`/api/director/events`), direccionado por `internalId`.
+ * POST, PUT y DELETE aún están pendientes en el BFF.
+ */
 @Injectable({ providedIn: 'root' })
 export class DirectorApiService {
   private readonly http = inject(HttpClient);
   private readonly msal = inject(MsalService, { optional: true });
-  private readonly eventsUrl = `${bffBaseUrl()}/events`;
+  private readonly eventsUrl = `${bffDirectorUrl()}/events`;
 
-  getEvents(): Observable<EventRead[]> {
+  getEvents(): Observable<DirectorEvent[]> {
     return withBffToken(this.msal, (headers) =>
-      this.http.get<EventRead[]>(this.eventsUrl, { headers }),
+      this.http.get<DirectorEvent[]>(this.eventsUrl, { headers }),
     );
   }
 
-  getEventByInternalId(internalId: string): Observable<EventRead> {
+  getEventByInternalId(internalId: string): Observable<DirectorEvent> {
     return withBffToken(this.msal, (headers) =>
-      this.http.get<EventRead>(this.eventUrl(internalId), { headers }),
+      this.http.get<DirectorEvent>(this.eventUrl(internalId), { headers }),
     );
   }
 
-  createEvent(payload: EventWrite): Observable<EventRead> {
+  createEvent(payload: EventWrite): Observable<DirectorEvent> {
     return withBffToken(this.msal, (headers) =>
-      this.http.post<EventRead>(this.eventsUrl, payload, { headers }),
+      this.http.post<DirectorEvent>(this.eventsUrl, payload, { headers }),
     );
   }
 
-  updateEvent(internalId: string, payload: EventWrite): Observable<EventRead> {
+  updateEvent(internalId: string, payload: EventWrite): Observable<DirectorEvent> {
     return withBffToken(this.msal, (headers) =>
-      this.http.put<EventRead>(this.eventUrl(internalId), payload, { headers }),
+      this.http.put<DirectorEvent>(this.eventUrl(internalId), payload, { headers }),
     );
   }
 

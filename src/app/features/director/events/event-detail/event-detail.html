@@ -13,6 +13,12 @@
         <mat-icon class="error-icon">error_outline</mat-icon>
         <span class="error-text">{{ error() }}</span>
       </div>
+      @if (canRetryLoad()) {
+        <button type="button" class="retry-btn" (click)="onRetryLoad()">
+          <mat-icon class="retry-icon">refresh</mat-icon>
+          Reintentar
+        </button>
+      }
       <button type="button" class="retry-btn" (click)="onBack()">
         <mat-icon class="retry-icon">arrow_back</mat-icon>
         Volver a la lista

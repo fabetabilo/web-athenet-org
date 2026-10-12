@@ -1,5 +1,6 @@
 import { ComponentFixture, TestBed } from '@angular/core/testing';
 import { BehaviorSubject, of, throwError } from 'rxjs';
+import { HttpErrorResponse } from '@angular/common/http';
 import { provideAnimations } from '@angular/platform-browser/animations';
 import { ActivatedRoute, convertToParamMap, Router } from '@angular/router';
 import { MatDialog } from '@angular/material/dialog';
@@ -7,12 +8,18 @@ import { EventDetailComponent } from './event-detail';
 import { DirectorApiService } from '../../services/director-api.service';
 import { EventCatalogService } from '../../services/event-catalog.service';
 import { DevDelegatesService } from '../../services/dev-delegates.service';
-import type { Campus, EventRead, EventType, Institution, Sport, Team } from '../../services/bff';
+import type {
+  CampusOption,
+  DirectorEvent,
+  EventTypeOption,
+  InstitutionOption,
+  SportOption,
+  TeamOption,
+} from '../../services/bff';
 
 describe('EventDetailComponent', () => {
   /** Partido que cruza la medianoche, con la forma de lectura del BFF. */
-  const MATCH_EVENT: EventRead = {
-    id: 42,
+  const MATCH_EVENT: DirectorEvent = {
     internalId: 'EVT-42',
     title: 'Clásico universitario de fútbol',
     description: 'Final del torneo interuniversitario.',
@@ -48,9 +55,8 @@ describe('EventDetailComponent', () => {
   };
 
   /** Jornada de varios días, sin deporte, organizada por una institución. */
-  const TRACKDAY_EVENT: EventRead = {
+  const TRACKDAY_EVENT: DirectorEvent = {
     ...MATCH_EVENT,
-    id: 43,
     internalId: 'EVT-43',
     title: 'Jornada de pista de primavera',
     type: 'TRACKDAY',
@@ -71,25 +77,25 @@ describe('EventDetailComponent', () => {
     delegate: null,
   };
 
-  const SPORTS: Sport[] = [
+  const SPORTS: SportOption[] = [
     { id: 1, name: 'Básquetbol' },
     { id: 3, name: 'Fútbol' },
   ];
-  const EVENT_TYPES: EventType[] = [
+  const EVENT_TYPES: EventTypeOption[] = [
     { code: 'MATCH', label: 'Partido', requiresMatchup: true },
     { code: 'MEETING', label: 'Reunión', requiresMatchup: false },
     { code: 'TRACKDAY', label: 'Jornada de Pista', requiresMatchup: false },
   ];
-  const INSTITUTIONS: Institution[] = [
+  const INSTITUTIONS: InstitutionOption[] = [
     { id: 1, name: 'Universidad de Santiago de Chile', acronym: 'USACH' },
     { id: 2, name: 'Universidad de Chile', acronym: 'UCH' },
   ];
-  const CAMPUSES: Campus[] = [
+  const CAMPUSES: CampusOption[] = [
     { id: 10, name: 'Casa Central' },
     { id: 11, name: 'Campus Estación Central' },
     { id: 20, name: 'Campus Juan Gómez Millas' },
   ];
-  const TEAMS: Team[] = [
+  const TEAMS: TeamOption[] = [
     { id: 100, name: 'USACH Fútbol Varones', division: 'MASCULINO' },
     { id: 101, name: 'USACH Fútbol Damas', division: 'FEMENINO' },
     { id: 200, name: 'U. de Chile Fútbol Varones', division: 'MASCULINO' },
@@ -121,7 +127,7 @@ describe('EventDetailComponent', () => {
     { oid: '0a1b2c3d-0000-4000-8000-000000000002', displayName: 'Pedro Soto' },
   ];
 
-  const mockEvent: EventRead = {
+  const mockEvent: DirectorEvent = {
     ...MATCH_EVENT,
     photos: ['https://example.com/photo1.jpg'],
   };
@@ -286,6 +292,44 @@ describe('EventDetailComponent', () => {
       expect(component['loading']()).toBe(false);
       expect(component['error']()).toContain('No se pudo cargar el evento');
       expect(fixture.nativeElement.querySelector('.error-banner')).toBeTruthy();
+    });
+
+    it('debe mostrar "evento no encontrado" si el BFF responde 404, sin ofrecer reintentar', () => {
+      setupTestBed('EVT-99');
+      directorApiMock.getEventByInternalId.mockReturnValue(
+        throwError(() => new HttpErrorResponse({ status: 404, error: { status: 404, code: 'NOT_FOUND' } })),
+      );
+      fixture.detectChanges();
+
+      expect(component['error']()).toBe('Evento no encontrado.');
+      expect(component['canRetryLoad']()).toBe(false);
+    });
+
+    it('debe ofrecer reintentar si el BFF responde 503 y recargar al reintentar', () => {
+      setupTestBed('EVT-42');
+      directorApiMock.getEventByInternalId.mockReturnValueOnce(
+        throwError(() => new HttpErrorResponse({ status: 503 })),
+      );
+      fixture.detectChanges();
+
+      expect(component['error']()).toContain('no está disponible');
+      expect(component['canRetryLoad']()).toBe(true);
+
+      component.onRetryLoad();
+
+      expect(directorApiMock.getEventByInternalId).toHaveBeenCalledTimes(2);
+      expect(component['error']()).toBeNull();
+      expect(component['event']()?.internalId).toBe('EVT-42');
+    });
+
+    it('debe mostrar "sin permisos" si el BFF responde 403', () => {
+      setupTestBed('EVT-42');
+      directorApiMock.getEventByInternalId.mockReturnValue(
+        throwError(() => new HttpErrorResponse({ status: 403 })),
+      );
+      fixture.detectChanges();
+
+      expect(component['error']()).toContain('No tienes permisos');
     });
   });
 

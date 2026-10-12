@@ -10,8 +10,8 @@ export const GRAPH_BASE_URL = 'https://graph.microsoft.com/v1.0';
  * `acquireTokenSilent` falla con `consent_required`.
  *
  * TEMPORAL (solo desarrollo): el director también pide este token para listar
- * delegados (`DevDelegatesService`). Debe dejar de hacerlo cuando el BFF exponga
- * `GET /api/v1/delegates`; ver la advertencia en ese servicio.
+ * delegados (`DevDelegatesService`), porque ese dropdown no pasa por el BFF;
+ * ver la advertencia en ese servicio.
  *
  * NOTA: aquí >podria< ir el `AppRoleAssignment.ReadWrite.All` para asignar los roles aqui mismo, e incluso crear cuentas.
  */

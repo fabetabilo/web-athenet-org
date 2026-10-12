@@ -5,12 +5,11 @@ import { MatDialog } from '@angular/material/dialog';
 import { Router } from '@angular/router';
 import { DirectorEventsComponent } from './events';
 import { DirectorApiService } from '../services/director-api.service';
-import type { EventRead } from '../services/bff';
+import type { DirectorEvent } from '../services/bff';
 
 describe('DirectorEventsComponent', () => {
   /** Partido que cruza la medianoche, con la forma de lectura del BFF. */
-  const MATCH_EVENT: EventRead = {
-    id: 42,
+  const MATCH_EVENT: DirectorEvent = {
     internalId: 'EVT-42',
     title: 'Clásico universitario de fútbol',
     description: 'Final del torneo interuniversitario.',
@@ -46,9 +45,8 @@ describe('DirectorEventsComponent', () => {
   };
 
   /** Jornada de varios días, sin deporte, organizada por una institución. */
-  const TRACKDAY_EVENT: EventRead = {
+  const TRACKDAY_EVENT: DirectorEvent = {
     ...MATCH_EVENT,
-    id: 43,
     internalId: 'EVT-43',
     title: 'Jornada de pista de primavera',
     type: 'TRACKDAY',
@@ -76,7 +74,7 @@ describe('DirectorEventsComponent', () => {
   let routerMock: { navigate: any };
 
   // Un partido de fútbol y una jornada sin deporte, con la forma del contrato del BFF.
-  const mockEvents: EventRead[] = [
+  const mockEvents: DirectorEvent[] = [
     { ...MATCH_EVENT, internalId: 'EVT-1', title: 'Campeonato Sudamericano' },
     { ...TRACKDAY_EVENT, internalId: 'EVT-2', title: 'Copa Femenina' },
   ];

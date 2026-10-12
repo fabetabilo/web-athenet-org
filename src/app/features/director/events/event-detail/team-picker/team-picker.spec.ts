@@ -12,7 +12,7 @@ import {
   type TeamPickerMode,
 } from './team-picker';
 import { EventCatalogService } from '../../../services/event-catalog.service';
-import type { Campus, Division, Institution, Team, TeamChain } from '../../../services/bff';
+import type { CampusOption, InstitutionOption, MatchTeam, TeamOption, TeamRef } from '../../../services/bff';
 
 @Component({
   standalone: true,
@@ -41,22 +41,22 @@ class HostComponent {
   readonly mode = signal<TeamPickerMode>('matchup');
   readonly sportId = signal<number | null>(3);
   readonly seed = signal<CascadeSeed | null>(null);
-  readonly division = signal<Division | null>(null);
+  readonly division = signal<string | null>(null);
   readonly exclude = signal<number | null>(null);
-  selected: Team | null = null;
+  selected: TeamRef | null = null;
 }
 
 describe('TeamPickerComponent', () => {
-  const INSTITUTIONS: Institution[] = [
+  const INSTITUTIONS: InstitutionOption[] = [
     { id: 2, name: 'Universidad de Chile', acronym: 'UCH' },
     { id: 1, name: 'Universidad de Santiago de Chile', acronym: 'USACH' },
   ];
-  const USACH_CAMPUSES: Campus[] = [
-    { id: 10, name: 'Casa Central', city: 'Santiago' },
-    { id: 11, name: 'Campus Estación Central', city: 'Santiago' },
+  const USACH_CAMPUSES: CampusOption[] = [
+    { id: 10, name: 'Casa Central' },
+    { id: 11, name: 'Campus Estación Central' },
   ];
   /** Lado de un partido tal como lo trae el GET del evento. */
-  const TEAM_ONE: TeamChain = {
+  const TEAM_ONE: MatchTeam = {
     id: 100,
     name: 'USACH Fútbol Varones',
     division: 'MASCULINO',
@@ -68,7 +68,7 @@ describe('TeamPickerComponent', () => {
   let host: HostComponent;
   let catalogMock: { getInstitutions: any; getCampuses: any; getTeams: any };
 
-  const TEAMS_CAMPUS_10: Team[] = [
+  const TEAMS_CAMPUS_10: TeamOption[] = [
     { id: 100, name: 'USACH Fútbol Varones', division: 'MASCULINO' },
     { id: 101, name: 'USACH Fútbol Damas', division: 'FEMENINO' },
   ];
@@ -185,8 +185,8 @@ describe('TeamPickerComponent', () => {
     });
 
     it('no debe dejar que una respuesta vieja pise a la nueva', async () => {
-      const lenta = new Subject<Campus[]>();
-      const rapida = new Subject<Campus[]>();
+      const lenta = new Subject<CampusOption[]>();
+      const rapida = new Subject<CampusOption[]>();
       catalogMock.getCampuses.mockReturnValueOnce(lenta).mockReturnValueOnce(rapida);
 
       await chooseInstitution(1);
@@ -195,7 +195,7 @@ describe('TeamPickerComponent', () => {
       lenta.next([{ id: 10, name: 'Casa Central' }]);
       await settle();
 
-      expect(picker().campusOptions().map((c: Campus) => c.id)).toEqual([20]);
+      expect(picker().campusOptions().map((c: CampusOption) => c.id)).toEqual([20]);
     });
 
     it('debe filtrar los equipos por la división recibida', async () => {
@@ -211,7 +211,7 @@ describe('TeamPickerComponent', () => {
       await chooseInstitution(1);
       await chooseCampus(10);
 
-      expect(picker().teamOptions().map((t: Team) => t.id)).toEqual([101]);
+      expect(picker().teamOptions().map((t: TeamOption) => t.id)).toEqual([101]);
     });
 
     it('sin deporte no debe listar nada y debe pedir elegirlo primero', async () => {
