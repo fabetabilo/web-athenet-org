@@ -19,9 +19,9 @@ type QueryValue = string | number | null | undefined;
  * Catálogos del formulario de evento. Se provee en `EventDetailComponent`, así
  * la caché dura lo que dura el formulario y la comparten sus `app-team-picker`.
  *
- * Deportes, instituciones, sedes y equipos son datos de prueba del BFF hasta su
- * integración con ms-institutions: no fijar IDs ni nombres en el código. Los
- * delegados no pasan por el BFF (ver `DevDelegatesService`).
+ * Deportes, instituciones, sedes y equipos vienen de ms-institutions a través del
+ * BFF, que ya oculta instituciones y equipos inactivos: no fijar IDs ni nombres en
+ * el código. Los delegados no pasan por el BFF (ver `DevDelegatesService`).
  */
 @Injectable()
 export class EventCatalogService {
@@ -39,15 +39,15 @@ export class EventCatalogService {
     return this.cached<SportOption>(`${this.commonUrl}/sports`);
   }
 
-  /** Con `sportId`, solo las que tienen equipos de ese deporte. */
-  getInstitutions(sportId?: number | null): Observable<InstitutionOption[]> {
-    return this.cached<InstitutionOption>(`${this.commonUrl}/institutions`, { sportId });
+  getInstitutions(): Observable<InstitutionOption[]> {
+    return this.cached<InstitutionOption>(`${this.commonUrl}/institutions`);
   }
 
-  getCampuses(institutionId: number, sportId?: number | null): Observable<CampusOption[]> {
-    return this.cached<CampusOption>(`${this.commonUrl}/institutions/${institutionId}/campuses`, { sportId });
+  getCampuses(institutionId: number): Observable<CampusOption[]> {
+    return this.cached<CampusOption>(`${this.commonUrl}/institutions/${institutionId}/campuses`);
   }
 
+  /** Único nivel de la cascada que se filtra por deporte (y por división, en partidos). */
   getTeams(campusId: number, sportId?: number | null, division?: string | null): Observable<TeamOption[]> {
     return this.cached<TeamOption>(`${this.commonUrl}/campuses/${campusId}/teams`, { sportId, division });
   }

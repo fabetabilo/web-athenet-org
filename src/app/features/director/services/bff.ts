@@ -70,7 +70,8 @@ export function bffErrorMessage(err: unknown, fallback: string): string {
     case 404:
       return 'Evento no encontrado.';
     case 503:
-      return 'El servicio de eventos no está disponible por ahora. Intenta nuevamente en unos minutos.';
+      // El BFF responde 503 si cualquiera de sus microservicios no responde (eventos o instituciones).
+      return 'Un servicio no está disponible por ahora. Intenta nuevamente en unos minutos.';
     default:
       return isApiError(err.error) ? err.error.message : fallback;
   }
@@ -159,7 +160,7 @@ export interface ApiError {
   fieldErrors: { field: string; code: string; message: string }[];
 }
 
-/** Body plano de POST/PUT (pendientes en el BFF): solo IDs. */
+/** Body plano de POST/PUT: solo IDs. */
 export interface EventWrite {
   internalId: string;
   title: string;

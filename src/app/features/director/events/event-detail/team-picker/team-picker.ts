@@ -129,24 +129,19 @@ export class TeamPickerComponent implements OnInit {
   protected readonly errorMessage = controlErrorMessage;
 
   constructor() {
+    // Instituciones y sedes no dependen del deporte: solo los equipos se filtran por él.
     this.loadLevel(
-      computed(() =>
-        this.editable() && !this.waitingForSport()
-          ? { sportId: this.isMatchup() ? this.sportId() : null }
-          : null,
-      ),
-      (q) => this.catalog.getInstitutions(q.sportId),
+      computed(() => (this.editable() && !this.waitingForSport() ? {} : null)),
+      () => this.catalog.getInstitutions(),
       this.institutions,
     );
 
     this.loadLevel(
       computed(() => {
         const institutionId = this.institutionId();
-        return this.editable() && institutionId !== null && !this.waitingForSport()
-          ? { institutionId, sportId: this.isMatchup() ? this.sportId() : null }
-          : null;
+        return this.editable() && institutionId !== null && !this.waitingForSport() ? { institutionId } : null;
       }),
-      (q) => this.catalog.getCampuses(q.institutionId, q.sportId),
+      (q) => this.catalog.getCampuses(q.institutionId),
       this.campuses,
     );
 
@@ -201,25 +196,18 @@ export class TeamPickerComponent implements OnInit {
 
   protected institutionHint(): string | null {
     if (this.editable() && this.waitingForSport()) return 'Elige primero un deporte.';
-    return this.hint(
-      this.institutions,
-      true,
-      'Cargando instituciones…',
-      this.isMatchup() ? 'Sin instituciones con equipos de este deporte.' : 'Sin instituciones disponibles.',
-    );
+    return this.hint(this.institutions, true, 'Cargando instituciones…', 'Sin instituciones disponibles.');
   }
 
   protected campusHint(): string | null {
-    return this.hint(
-      this.campuses,
-      this.institutionId() !== null,
-      'Cargando sedes…',
-      this.isMatchup() ? 'Sin sedes con equipos de este deporte.' : 'Esta institución no tiene sedes.',
-    );
+    return this.hint(this.campuses, this.institutionId() !== null, 'Cargando sedes…', 'Esta institución no tiene sedes.');
   }
 
+  /** Con deporte elegido, una sede sin equipos de ese deporte es el caso vacío esperable. */
   protected teamHint(): string | null {
-    return this.hint(this.teams, this.campusId() !== null, 'Cargando equipos…', 'Sin equipos disponibles en esta sede.');
+    const emptyText =
+      this.sportId() !== null ? 'Sin equipos de este deporte en esta sede.' : 'Sin equipos disponibles en esta sede.';
+    return this.hint(this.teams, this.campusId() !== null, 'Cargando equipos…', emptyText);
   }
 
   /** Copia los controles a signals y habilita cada nivel según el anterior. */
