@@ -11,6 +11,8 @@ import { DirectorComponent } from './features/director/director'
 import { DirectorHomeComponent } from './features/director/home/home'
 import { DirectorEventsComponent } from './features/director/events/events'
 import { EventDetailComponent } from './features/director/events/event-detail/event-detail'
+import { DelegateComponent } from './features/delegate/delegate'
+import { DelegateHomeComponent } from './features/delegate/home/home'
 import { UnauthorizedComponent } from './shared/unauthorized/unauthorized'
 import { RoleGuard } from '../auth/guards/role.guard'
 
@@ -44,6 +46,17 @@ export const routes: Routes = [
       { path: '', component: DirectorHomeComponent },
       { path: 'events', component: DirectorEventsComponent },
       { path: 'events/:internalId', component: EventDetailComponent },
+    ]
+  },
+
+  // Rol Delegado
+  {
+    path: 'delegate',
+    component: DelegateComponent,
+    canActivate: [RoleGuard],
+    data: { roles: ['delegate'] },
+    children: [
+      { path: '', component: DelegateHomeComponent },
     ]
   },
 

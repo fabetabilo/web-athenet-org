@@ -1,0 +1,18 @@
+<div class="layout-wrapper">
+  <app-topbar
+    [accountName]="accountName"
+    [userRole]="userRole"
+    (logoutClick)="logout()">
+  </app-topbar>
+
+  <div class="layout-body">
+    <app-sidebar
+      [menuItems]="delegateMenuItems"
+      (logoutClick)="logout()">
+    </app-sidebar>
+
+    <div class="dashboard-content">
+      <router-outlet></router-outlet>
+    </div>
+  </div>
+</div>
