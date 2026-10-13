@@ -1,8 +1,50 @@
 <header class="topbar">
   <div class="topbar-left">
+    <app-session-timer></app-session-timer>
     <ng-content></ng-content>
   </div>
+
   <div class="topbar-right">
-    <app-session-timer></app-session-timer>
+    <!-- Notificaciones y configuración todavía no tienen acción. -->
+    <button type="button" class="topbar-icon-btn" title="Notificaciones" aria-label="Notificaciones">
+      <mat-icon>notifications_none</mat-icon>
+    </button>
+    <button type="button" class="topbar-icon-btn" title="Configuración" aria-label="Configuración">
+      <mat-icon>settings</mat-icon>
+    </button>
+
+    <button
+      type="button"
+      class="profile-trigger"
+      [matMenuTriggerFor]="profileMenu"
+      [attr.title]="accountName()"
+      aria-label="Menú de perfil">
+      <span class="avatar">{{ initial() }}</span>
+    </button>
   </div>
 </header>
+
+<!-- El panel se renderiza en el overlay: su fondo y hover están en src/styles/_layout.scss. -->
+<mat-menu #profileMenu="matMenu" xPosition="before" class="profile-menu">
+  <div class="profile-header">
+    <span class="avatar avatar-lg">{{ initial() }}</span>
+    <div class="profile-info">
+      <span class="profile-name">{{ accountName() }}</span>
+      <span class="profile-role">{{ userRole() | titlecase }}</span>
+    </div>
+  </div>
+
+  <div class="profile-divider" role="separator"></div>
+
+  <button mat-menu-item class="profile-menu-item">
+    <mat-icon>person</mat-icon>
+    <span>Mi Perfil</span>
+  </button>
+
+  <div class="profile-divider" role="separator"></div>
+
+  <button mat-menu-item class="profile-menu-item" (click)="logoutClick.emit()">
+    <mat-icon>logout</mat-icon>
+    <span>Cerrar sesión</span>
+  </button>
+</mat-menu>

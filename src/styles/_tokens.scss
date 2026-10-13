@@ -55,10 +55,21 @@
   --sidebar-width-collapsed: 80px;
   --sidebar-border:          rgba(255, 255, 255, 0.05);
 
+  // ── Sidebar Items ──
+  // Densidad de los items de navegación y del botón de cerrar sesión.
+  --sidebar-item-height:     2.25rem;
+  --sidebar-item-padding-x:  var(--space-3);
+  --sidebar-item-gap:        var(--space-3);
+  --sidebar-item-spacing:    2px;
+  --sidebar-item-radius:     var(--radius-md);
+  --sidebar-item-font-size:  0.875rem;
+  --sidebar-item-icon-size:  1.25rem;
+  --sidebar-item-active-bg:  rgba(70, 134, 229, 0.15);
+
   // ── Topbar ──
   // Derivados de los del sidebar: si alguien cambia la paleta, la barra
   // superior mantiene la continuidad visual sola.
-  --topbar-height:      32px;
+  --topbar-height:      48px;
   --topbar-bg:          var(--sidebar-bg);
   --topbar-border:      var(--sidebar-border);
   --topbar-text:        var(--sidebar-text);
