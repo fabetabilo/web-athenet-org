@@ -62,6 +62,8 @@ export class App implements OnInit {
       this.router.navigate(['/admin'])
     } else if (roles.includes('director')) {
       this.router.navigate(['/director'])
+    } else if (roles.includes('delegate')) {
+      this.router.navigate(['/delegate'])
     } else {
       // Usuario autenticado pero sin rol asignado en la app
       this.router.navigate(['/unauthorized'])

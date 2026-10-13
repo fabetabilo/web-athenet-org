@@ -140,8 +140,8 @@ describe('TeamPickerComponent', () => {
       host.form.enable();
       await settle();
 
-      expect(catalogMock.getInstitutions).toHaveBeenCalledWith(3);
-      expect(catalogMock.getCampuses).toHaveBeenCalledWith(1, 3);
+      expect(catalogMock.getInstitutions).toHaveBeenCalledWith();
+      expect(catalogMock.getCampuses).toHaveBeenCalledWith(1);
       expect(catalogMock.getTeams).toHaveBeenCalledWith(10, 3, null);
       expect(host.campus.enabled).toBe(true);
       expect(host.team.enabled).toBe(true);
@@ -153,9 +153,16 @@ describe('TeamPickerComponent', () => {
       await settle();
     });
 
-    it('debe pedir solo las instituciones con equipos del deporte', () => {
-      expect(catalogMock.getInstitutions).toHaveBeenCalledWith(3);
+    it('con deporte elegido debe pedir las instituciones, sin filtrarlas por él', () => {
+      expect(catalogMock.getInstitutions).toHaveBeenCalledWith();
       expect(picker().institutionOptions()).toEqual(INSTITUTIONS);
+    });
+
+    it('cambiar de deporte no debe volver a pedir las instituciones', async () => {
+      host.sportId.set(1);
+      await settle();
+
+      expect(catalogMock.getInstitutions).toHaveBeenCalledTimes(1);
     });
 
     it('debe habilitar cada nivel solo cuando el anterior tiene valor', async () => {
@@ -165,7 +172,7 @@ describe('TeamPickerComponent', () => {
       await chooseInstitution(1);
       expect(host.campus.enabled).toBe(true);
       expect(host.team.disabled).toBe(true);
-      expect(catalogMock.getCampuses).toHaveBeenCalledWith(1, 3);
+      expect(catalogMock.getCampuses).toHaveBeenCalledWith(1);
 
       await chooseCampus(10);
       expect(host.team.enabled).toBe(true);
@@ -214,6 +221,14 @@ describe('TeamPickerComponent', () => {
       expect(picker().teamOptions().map((t: TeamOption) => t.id)).toEqual([101]);
     });
 
+    it('una sede sin equipos del deporte debe avisarlo', async () => {
+      catalogMock.getTeams.mockReturnValue(of([]));
+      await chooseInstitution(1);
+      await chooseCampus(10);
+
+      expect(fixture.nativeElement.textContent).toContain('Sin equipos de este deporte en esta sede.');
+    });
+
     it('sin deporte no debe listar nada y debe pedir elegirlo primero', async () => {
       catalogMock.getInstitutions.mockClear();
       host.sportId.set(null);
@@ -232,10 +247,10 @@ describe('TeamPickerComponent', () => {
     });
 
     it('debe listar todas las instituciones y sedes, y equipos sin filtro si no hay deporte', async () => {
-      expect(catalogMock.getInstitutions).toHaveBeenCalledWith(null);
+      expect(catalogMock.getInstitutions).toHaveBeenCalledWith();
 
       await chooseInstitution(1);
-      expect(catalogMock.getCampuses).toHaveBeenCalledWith(1, null);
+      expect(catalogMock.getCampuses).toHaveBeenCalledWith(1);
 
       await chooseCampus(10);
       expect(catalogMock.getTeams).toHaveBeenCalledWith(10, null, null);
@@ -246,7 +261,7 @@ describe('TeamPickerComponent', () => {
       await chooseInstitution(1);
       await chooseCampus(10);
 
-      expect(catalogMock.getCampuses).toHaveBeenCalledWith(1, null);
+      expect(catalogMock.getCampuses).toHaveBeenCalledWith(1);
       expect(catalogMock.getTeams).toHaveBeenCalledWith(10, 3, null);
     });
 

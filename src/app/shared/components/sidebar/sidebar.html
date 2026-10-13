@@ -3,17 +3,23 @@
     <div class="logo-container">
       <img src="athenet-light.png" alt="Athenet" class="logo-img" />
     </div>
-    <button class="toggle-btn" (click)="toggleSidebar()" title="Alternar menú">
-      <mat-icon>menu</mat-icon>
+    <button
+      type="button"
+      class="toggle-btn"
+      (click)="toggleSidebar()"
+      [attr.title]="isCollapsed() ? 'Expandir menú' : 'Contraer menú'"
+      [attr.aria-label]="isCollapsed() ? 'Expandir menú' : 'Contraer menú'"
+      [attr.aria-expanded]="!isCollapsed()">
+      <!-- Material Icons no trae el ícono de panel: el panel lateral se dibuja ancho o angosto según el estado. -->
+      <svg class="toggle-icon" viewBox="0 0 24 24" aria-hidden="true">
+        <rect x="3" y="5" width="18" height="14" rx="3" />
+        @if (isCollapsed()) {
+          <path d="M7 9v6" />
+        } @else {
+          <path d="M9 5v14" />
+        }
+      </svg>
     </button>
-  </div>
-
-  <div class="user-profile">
-    <div class="avatar">{{ accountName().charAt(0).toUpperCase() }}</div>
-    <div class="user-info">
-      <span class="user-name">{{ accountName() }}</span>
-      <span class="user-role">{{ userRole() | titlecase }}</span>
-    </div>
   </div>
 
   <nav class="sidebar-nav">

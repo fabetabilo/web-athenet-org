@@ -72,20 +72,20 @@ describe('EventCatalogService', () => {
     expect(tipos.find((t) => t.code === 'MATCH').requiresMatchup).toBe(true);
   });
 
-  it('debe mandar sportId solo cuando viene', () => {
-    service.getInstitutions().subscribe();
-    service.getInstitutions(3).subscribe();
+  it('debe pedir las instituciones sin filtros', () => {
+    let instituciones: any[] = [];
+    service.getInstitutions().subscribe((lista) => (instituciones = lista));
 
     httpTesting.expectOne(`${common}/institutions`).flush(INSTITUTIONS);
-    httpTesting.expectOne(`${common}/institutions?sportId=3`).flush(INSTITUTIONS);
+    expect(instituciones).toEqual(INSTITUTIONS);
   });
 
-  it('debe armar las rutas de la cascada con sus filtros', () => {
-    service.getCampuses(1, 3).subscribe();
+  it('debe armar las rutas de la cascada; solo los equipos llevan filtros', () => {
+    service.getCampuses(1).subscribe();
     service.getTeams(10, 3, 'MASCULINO').subscribe();
     service.getTeams(10).subscribe();
 
-    httpTesting.expectOne(`${common}/institutions/1/campuses?sportId=3`).flush([]);
+    httpTesting.expectOne(`${common}/institutions/1/campuses`).flush([]);
     httpTesting.expectOne(`${common}/campuses/10/teams?sportId=3&division=MASCULINO`).flush([]);
     httpTesting.expectOne(`${common}/campuses/10/teams`).flush([]);
   });
@@ -93,11 +93,11 @@ describe('EventCatalogService', () => {
   it('debe reutilizar la respuesta cuando dos cascadas piden lo mismo', () => {
     let primera: any[] = [];
     let segunda: any[] = [];
-    service.getCampuses(1, 3).subscribe((lista) => (primera = lista));
-    httpTesting.expectOne(`${common}/institutions/1/campuses?sportId=3`).flush([{ id: 10, name: 'Casa Central' }]);
+    service.getCampuses(1).subscribe((lista) => (primera = lista));
+    httpTesting.expectOne(`${common}/institutions/1/campuses`).flush([{ id: 10, name: 'Casa Central' }]);
 
-    service.getCampuses(1, 3).subscribe((lista) => (segunda = lista));
-    httpTesting.expectNone(`${common}/institutions/1/campuses?sportId=3`);
+    service.getCampuses(1).subscribe((lista) => (segunda = lista));
+    httpTesting.expectNone(`${common}/institutions/1/campuses`);
 
     expect(segunda).toEqual(primera);
   });

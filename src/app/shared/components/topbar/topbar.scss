@@ -1,5 +1,6 @@
 // Barra superior compartida
-// Ocupa solo el ancho del area de contenido: no cruza por encima del sidebar.
+// Ocupa todo el ancho, por encima del sidebar. Queda fija porque el scroll vive
+// en .dashboard-content (ver src/styles/_layout.scss).
 :host {
   display: block;
   flex: 0 0 auto;
@@ -29,7 +30,120 @@
 .topbar-right {
   display: flex;
   align-items: center;
-  gap: var(--space-3);
+  gap: var(--space-2);
   margin-left: auto;
   flex-shrink: 0;
+}
+
+.topbar-icon-btn {
+  width: 2rem;
+  height: 2rem;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0;
+  border: none;
+  border-radius: var(--radius-md);
+  background: transparent;
+  color: var(--topbar-text);
+  cursor: pointer;
+  transition: background var(--transition-fast), color var(--transition-fast);
+
+  mat-icon {
+    font-size: 1.25rem;
+    width: 1.25rem;
+    height: 1.25rem;
+  }
+
+  &:hover {
+    background: var(--sidebar-hover);
+    color: var(--topbar-text-strong);
+  }
+}
+
+.profile-trigger {
+  display: flex;
+  margin-left: var(--space-1);
+  padding: 0;
+  border: none;
+  border-radius: var(--radius-full);
+  background: transparent;
+  cursor: pointer;
+}
+
+.topbar-icon-btn,
+.profile-trigger {
+  &:focus-visible {
+    outline: 2px solid var(--color-primary);
+    outline-offset: 1px;
+  }
+}
+
+.avatar {
+  width: 2rem;
+  height: 2rem;
+  border-radius: 50%;
+  background: linear-gradient(135deg, var(--color-primary), var(--color-primary-hover));
+  color: var(--color-white);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-weight: 600;
+  font-size: 0.875rem;
+  flex-shrink: 0;
+}
+
+.avatar-lg {
+  width: 2.5rem;
+  height: 2.5rem;
+  font-size: 1.2rem;
+}
+
+// ── Contenido del menú de perfil ──
+// Se declara en esta plantilla, así que estos estilos le llegan aunque se
+// renderice en el overlay.
+.profile-header {
+  display: flex;
+  align-items: center;
+  gap: var(--space-3);
+  padding: var(--space-2) var(--space-3);
+}
+
+.profile-info {
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+  white-space: nowrap;
+}
+
+.profile-name {
+  color: var(--sidebar-text-active);
+  font-weight: 500;
+  font-size: 0.95rem;
+  text-overflow: ellipsis;
+  overflow: hidden;
+}
+
+.profile-role {
+  color: var(--color-primary);
+  font-size: 0.75rem;
+  font-weight: 600;
+  letter-spacing: 0.05em;
+  margin-top: var(--space-1);
+}
+
+.profile-divider {
+  border-top: 1px solid var(--sidebar-border);
+  margin: var(--space-2) 0;
+}
+
+// Misma densidad y forma que los items del sidebar.
+.profile-menu-item {
+  min-height: var(--sidebar-item-height);
+  border-radius: var(--sidebar-item-radius);
+
+  // --mat-menu-item-icon-size solo fija ancho y alto: sin esto el glifo queda en 24px.
+  mat-icon {
+    font-size: var(--sidebar-item-icon-size);
+  }
 }
