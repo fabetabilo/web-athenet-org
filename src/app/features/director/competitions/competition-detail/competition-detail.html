@@ -1,0 +1,274 @@
+<div class="competition-detail-page">
+
+  @if (loading()) {
+    <div class="detail-loading">
+      <div class="loading-spinner"></div>
+      <span>Cargando copa…</span>
+    </div>
+  }
+
+  @if (error() && !loading()) {
+    <div class="error-banner">
+      <div class="error-content">
+        <mat-icon class="error-icon">error_outline</mat-icon>
+        <span class="error-text">{{ error() }}</span>
+      </div>
+      @if (canRetryLoad()) {
+        <button type="button" class="retry-btn" (click)="loadCompetition()">
+          <mat-icon class="retry-icon">refresh</mat-icon>
+          Reintentar
+        </button>
+      }
+      <button type="button" class="retry-btn" (click)="onBack()">
+        <mat-icon class="retry-icon">arrow_back</mat-icon>
+        Volver a la lista
+      </button>
+    </div>
+  }
+
+  @if (competition(); as cup) {
+    <div class="detail-header">
+      <button type="button" class="back-btn" (click)="onBack()" aria-label="Volver a competencias">
+        <mat-icon>arrow_back</mat-icon>
+        <span>Competencias</span>
+      </button>
+
+      <div class="cup-summary">
+        <div class="cup-image">
+          @if (!imgBroken()) {
+            <img [src]="cup.competitionImg" [alt]="cup.name" (error)="imgBroken.set(true)" />
+          } @else {
+            <mat-icon>emoji_events</mat-icon>
+          }
+        </div>
+
+        <div class="cup-info">
+          <app-pill [variant]="status[cup.status].variant" [dot]="true">{{ status[cup.status].label }}</app-pill>
+          <h1 class="cup-title">{{ cup.name }}</h1>
+          <div class="cup-meta">
+            <span><mat-icon>sports</mat-icon>{{ cup.sport.name ?? '—' }}</span>
+            <span><mat-icon>event</mat-icon>Temporada {{ cup.season }}</span>
+            @if (cup.startDate || cup.endDate) {
+              <span>
+                <mat-icon>date_range</mat-icon>
+                {{ cup.startDate ? (cup.startDate | date: 'dd/MM/yyyy') : '…' }}
+                – {{ cup.endDate ? (cup.endDate | date: 'dd/MM/yyyy') : '…' }}
+              </span>
+            }
+          </div>
+          @if (cup.description) {
+            <p class="cup-description">{{ cup.description }}</p>
+          }
+        </div>
+      </div>
+    </div>
+
+    <div class="table-toolbar">
+      @if (isDraft()) {
+        <span class="toolbar-left start-hint">
+          @if (!canStart()) {
+            <mat-icon>info_outline</mat-icon>
+            Para iniciar: {{ cupSize }} equipos inscritos y los 8 partidos de octavos sorteados.
+          }
+        </span>
+        <app-button variant="primary" icon="play_arrow" [disabled]="!canStart() || busy()" (click)="onStart()">
+          Iniciar copa
+        </app-button>
+      }
+      <app-button variant="secondary" icon="edit" [disabled]="busy()" (click)="onEdit()">Editar</app-button>
+      @if (isDraft()) {
+        <app-button variant="danger" icon="delete" [disabled]="busy()" (click)="onDelete()">Eliminar</app-button>
+      }
+    </div>
+
+    <mat-tab-group class="cup-tabs" animationDuration="0ms" (selectedIndexChange)="onTabChange($event)">
+      <mat-tab [label]="'Equipos (' + teams().length + '/' + cupSize + ')'">
+        <div class="tab-body">
+          @if (teamsError(); as message) {
+            <div class="error-banner">
+              <div class="error-content">
+                <mat-icon class="error-icon">error_outline</mat-icon>
+                <span class="error-text">{{ message }}</span>
+              </div>
+              <button type="button" class="retry-btn" (click)="loadTeams()">
+                <mat-icon class="retry-icon">refresh</mat-icon>
+                Reintentar
+              </button>
+            </div>
+          }
+
+          <div class="table-toolbar">
+            <span class="toolbar-left roster-count" [class.complete]="rosterFull()">
+              <mat-icon>groups</mat-icon>
+              {{ teams().length }}/{{ cupSize }} equipos
+            </span>
+            @if (!rosterFull() && isDraft()) {
+              <app-button variant="primary" icon="group_add" [disabled]="busy()" (click)="onEnrollTeam()">
+                Inscribir equipo
+              </app-button>
+            }
+          </div>
+
+          <app-table
+            [columns]="teamColumns"
+            [data]="teams()"
+            [loading]="teamsLoading()"
+            [trackBy]="trackTeam"
+            minWidth="640px"
+            emptyMessage="Todavía no hay equipos inscritos"
+          >
+            <ng-template tableCell="logoUrl" let-row>
+              <div class="team-logo">
+                <mat-icon>shield</mat-icon>
+                @if (row.logoUrl) {
+                  <img [src]="row.logoUrl" alt="" loading="lazy" (error)="$any($event.target).hidden = true" />
+                }
+              </div>
+            </ng-template>
+
+            <ng-template tableCell="name" let-row>
+              <span class="strong-cell">{{ row.name }}</span>
+            </ng-template>
+
+            <ng-template tableCell="institution.name" let-row>
+              {{ row.institution.name ?? '—' }}
+              @if (row.institution.acronym) {
+                <span class="muted-cell">({{ row.institution.acronym }})</span>
+              }
+            </ng-template>
+
+            <ng-template tableCell="actions" let-row>
+              @if (isDraft()) {
+                <div class="actions-group">
+                  <button
+                    mat-icon-button
+                    class="action-btn delete-btn"
+                    type="button"
+                    [disabled]="busy()"
+                    (click)="onRemoveTeam(row)"
+                    title="Quitar de la copa"
+                    aria-label="Quitar de la copa"
+                  >
+                    <mat-icon>person_remove</mat-icon>
+                  </button>
+                </div>
+              }
+            </ng-template>
+          </app-table>
+        </div>
+      </mat-tab>
+
+      <mat-tab label="Encuentros">
+        <div class="tab-body">
+          @if (matchesError(); as message) {
+            <div class="error-banner">
+              <div class="error-content">
+                <mat-icon class="error-icon">error_outline</mat-icon>
+                <span class="error-text">{{ message }}</span>
+              </div>
+              <button type="button" class="retry-btn" (click)="loadMatches()">
+                <mat-icon class="retry-icon">refresh</mat-icon>
+                Reintentar
+              </button>
+            </div>
+          }
+
+          @if (matchesLoading() && matches().length === 0) {
+            <div class="detail-loading">
+              <div class="loading-spinner"></div>
+              <span>Cargando encuentros…</span>
+            </div>
+          }
+
+          @for (round of rounds(); track round.label) {
+            <section class="round-section">
+              <h2 class="round-title">{{ round.label }}</h2>
+              <app-table
+                [columns]="matchColumns"
+                [data]="round.matches"
+                [loading]="matchesLoading()"
+                minWidth="1060px"
+              >
+                <ng-template tableCell="position" let-row>
+                  <span class="strong-cell">{{ row.roundLabel }} · {{ row.position }}</span>
+                </ng-template>
+
+                <ng-template tableCell="homeTeam" let-row>
+                  <span class="matchup">
+                    <span [class.muted-cell]="!row.homeTeam">{{ row.homeTeam?.name ?? 'Por definir' }}</span>
+                    <span class="vs">vs</span>
+                    <span [class.muted-cell]="!row.awayTeam">{{ row.awayTeam?.name ?? 'Por definir' }}</span>
+                  </span>
+                </ng-template>
+
+                <ng-template tableCell="date" let-row>
+                  @if (row.date) {
+                    {{ row.date | date: 'dd/MM/yyyy' }} {{ row.time ?? '' }}
+                  } @else {
+                    <span class="muted-cell">Sin fecha</span>
+                  }
+                </ng-template>
+
+                <ng-template tableCell="location" let-row>
+                  @if (row.location) {
+                    {{ row.location }}
+                  } @else {
+                    <span class="muted-cell">Sin lugar</span>
+                  }
+                </ng-template>
+
+                <ng-template tableCell="delegate" let-row>
+                  @if (row.delegate) {
+                    {{ row.delegate.displayName }}
+                  } @else {
+                    <span class="muted-cell">Sin asignar</span>
+                  }
+                </ng-template>
+
+                <ng-template tableCell="status" let-row>
+                  <div class="status-cell">
+                    <app-pill [variant]="matchStatus[row.status].variant" [dot]="true">
+                      {{ matchStatus[row.status].label }}
+                    </app-pill>
+                    @if (row.status === 'SCHEDULED' && missing(row).length) {
+                      <span class="missing-note" [title]="'Falta: ' + missing(row).join(', ')">
+                        Falta {{ missing(row).join(', ') }}
+                      </span>
+                    }
+                  </div>
+                </ng-template>
+
+                <ng-template tableCell="homeScore" let-row>
+                  @if (row.status === 'FINISHED') {
+                    <span class="score">{{ row.homeScore }} - {{ row.awayScore }}</span>
+                  } @else {
+                    <span class="muted-cell">—</span>
+                  }
+                </ng-template>
+
+                <ng-template tableCell="actions" let-row>
+                  <div class="actions-group">
+                    @if (canEditMatch(row)) {
+                      <button
+                        mat-icon-button
+                        class="action-btn edit-btn"
+                        type="button"
+                        (click)="onEditMatch(row)"
+                        title="Editar encuentro"
+                        aria-label="Editar encuentro"
+                      >
+                        <mat-icon>edit</mat-icon>
+                      </button>
+                    } @else {
+                      <mat-icon class="readonly-icon" title="Solo lectura">lock</mat-icon>
+                    }
+                  </div>
+                </ng-template>
+              </app-table>
+            </section>
+          }
+        </div>
+      </mat-tab>
+    </mat-tab-group>
+  }
+</div>

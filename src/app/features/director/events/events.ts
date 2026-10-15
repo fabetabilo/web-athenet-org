@@ -187,6 +187,10 @@ export class DirectorEventsComponent implements OnInit {
     });
   }
 
+  onOpenCompetition(event: DirectorEvent): void {
+    this.router.navigate(['/director/competitions', event.competitionId]);
+  }
+
   onCreateEvent(): void {
     this.router.navigate(['/director/events', 'new']);
   }

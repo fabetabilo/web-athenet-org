@@ -6,6 +6,10 @@ const CONTROL_ERROR_MESSAGES: Record<string, string> = {
   divisionMismatch: 'Los equipos deben ser de la misma división.',
   endBeforeStart: 'El término debe ser posterior al inicio.',
   startAfterEnd: 'La fecha de inicio no puede ser posterior a la de término.',
+  endDateBeforeStart: 'La fecha de término no puede ser anterior a la de inicio.',
+  maxlength: 'Supera el largo máximo permitido.',
+  alreadyEnrolled: 'El equipo ya está inscrito en la copa.',
+  matchNotAllowed: 'Los partidos se gestionan desde Competencias.',
   matDatepickerParse: 'Fecha inválida.',
   matTimepickerParse: 'Hora inválida.',
 };

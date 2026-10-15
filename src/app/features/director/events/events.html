@@ -40,6 +40,9 @@
     <!-- 2. Título -->
     <ng-template tableCell="title" let-row>
       <span class="event-title">{{ row.title }}</span>
+      @if (row.competitionMatchId != null) {
+        <app-pill variant="info" icon="emoji_events">Copa</app-pill>
+      }
     </ng-template>
 
     <!-- 3. Deporte -->
@@ -93,26 +96,39 @@
     <!-- 8. Acciones -->
     <ng-template tableCell="actions" let-row>
       <div class="actions-group">
-        <button
-          mat-icon-button
-          class="action-btn edit-btn"
-          type="button"
-          (click)="onEdit(row)"
-          title="Editar evento"
-          aria-label="Editar evento"
-        >
-          <mat-icon>edit</mat-icon>
-        </button>
-        <button
-          mat-icon-button
-          class="action-btn delete-btn"
-          type="button"
-          (click)="onDelete(row)"
-          title="Eliminar evento"
-          aria-label="Eliminar evento"
-        >
-          <mat-icon>delete</mat-icon>
-        </button>
+        @if (row.competitionMatchId != null) {
+          <button
+            mat-icon-button
+            class="action-btn edit-btn"
+            type="button"
+            (click)="onOpenCompetition(row)"
+            title="Se gestiona desde la competencia"
+            aria-label="Abrir competencia"
+          >
+            <mat-icon>emoji_events</mat-icon>
+          </button>
+        } @else {
+          <button
+            mat-icon-button
+            class="action-btn edit-btn"
+            type="button"
+            (click)="onEdit(row)"
+            title="Editar evento"
+            aria-label="Editar evento"
+          >
+            <mat-icon>edit</mat-icon>
+          </button>
+          <button
+            mat-icon-button
+            class="action-btn delete-btn"
+            type="button"
+            (click)="onDelete(row)"
+            title="Eliminar evento"
+            aria-label="Eliminar evento"
+          >
+            <mat-icon>delete</mat-icon>
+          </button>
+        }
       </div>
     </ng-template>
   </app-table>

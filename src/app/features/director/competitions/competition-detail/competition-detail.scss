@@ -1,0 +1,206 @@
+@use '../../events/events';
+@use '../../events/event-detail/event-detail';
+
+.competition-detail-page {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-6);
+}
+
+.detail-header {
+  flex-direction: column;
+  gap: var(--space-4);
+}
+
+.cup-summary {
+  display: flex;
+  align-items: flex-start;
+  gap: var(--space-5);
+}
+
+.cup-image {
+  width: 96px;
+  height: 96px;
+  flex-shrink: 0;
+  border-radius: var(--radius-xl);
+  border: 1px solid var(--color-border);
+  background: var(--color-slate-100);
+  overflow: hidden;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: var(--color-text-subtle);
+
+  img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+  }
+
+  mat-icon {
+    font-size: 40px;
+    width: 40px;
+    height: 40px;
+  }
+}
+
+.cup-info {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2);
+  min-width: 0;
+}
+
+.cup-title {
+  margin: 0;
+  font-size: 1.5rem;
+  font-weight: 700;
+  color: var(--color-text-heading);
+  letter-spacing: -0.02em;
+}
+
+.cup-meta {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-4);
+  font-size: 0.875rem;
+  color: var(--color-text-muted);
+
+  span {
+    display: inline-flex;
+    align-items: center;
+    gap: var(--space-1);
+  }
+
+  mat-icon {
+    font-size: 16px;
+    width: 16px;
+    height: 16px;
+  }
+}
+
+.cup-description {
+  margin: 0;
+  font-size: 0.875rem;
+  color: var(--color-text-body);
+}
+
+.start-hint,
+.roster-count {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-2);
+  font-size: 0.8125rem;
+  color: var(--color-text-muted);
+
+  mat-icon {
+    font-size: 18px;
+    width: 18px;
+    height: 18px;
+  }
+}
+
+.roster-count {
+  font-weight: 600;
+  color: var(--color-text-body);
+
+  &.complete {
+    color: var(--pill-success-text);
+  }
+}
+
+.tab-body {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-4);
+  padding-top: var(--space-4);
+}
+
+.round-section {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2);
+}
+
+.round-title {
+  margin: 0;
+  font-size: 0.75rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  color: var(--color-text-muted);
+}
+
+.strong-cell {
+  font-weight: 600;
+  color: var(--color-text-heading);
+}
+
+.matchup {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-2);
+
+  .vs {
+    font-size: 0.75rem;
+    color: var(--color-text-muted);
+  }
+}
+
+.status-cell {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 2px;
+}
+
+.missing-note {
+  font-size: 0.6875rem;
+  color: var(--color-warning-text);
+}
+
+.score {
+  font-weight: 700;
+  font-variant-numeric: tabular-nums;
+  color: var(--color-text-heading);
+}
+
+.readonly-icon {
+  font-size: 18px;
+  width: 18px;
+  height: 18px;
+  color: var(--color-text-subtle);
+}
+
+.team-logo {
+  position: relative;
+  width: 36px;
+  height: 36px;
+  border-radius: var(--radius-full);
+  background: var(--color-slate-100);
+  overflow: hidden;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: var(--color-text-subtle);
+
+  mat-icon {
+    font-size: 18px;
+    width: 18px;
+    height: 18px;
+  }
+
+  img {
+    position: absolute;
+    inset: 0;
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+  }
+}
+
+@media (max-width: 600px) {
+  .cup-summary {
+    flex-direction: column;
+  }
+}

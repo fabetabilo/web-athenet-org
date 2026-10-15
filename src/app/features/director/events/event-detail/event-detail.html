@@ -58,7 +58,17 @@
     </div>
 
     <div class="table-toolbar">
-      @if (!isEdit()) {
+      @if (isCompetitionCopy()) {
+        <app-pill variant="info" icon="emoji_events">Copa · Se gestiona desde la competencia</app-pill>
+        <app-button
+          variant="secondary"
+          icon="open_in_new"
+          (click)="onOpenCompetition()"
+          aria-label="Abrir competencia"
+        >
+          Ver competencia
+        </app-button>
+      } @else if (!isEdit()) {
         <app-button
           variant="secondary"
           icon="edit"
