@@ -11,6 +11,8 @@ import { DirectorComponent } from './features/director/director'
 import { DirectorHomeComponent } from './features/director/home/home'
 import { DirectorEventsComponent } from './features/director/events/events'
 import { EventDetailComponent } from './features/director/events/event-detail/event-detail'
+import { DirectorCompetitionsComponent } from './features/director/competitions/competitions'
+import { CompetitionDetailComponent } from './features/director/competitions/competition-detail/competition-detail'
 import { DelegateComponent } from './features/delegate/delegate'
 import { DelegateHomeComponent } from './features/delegate/home/home'
 import { UnauthorizedComponent } from './shared/unauthorized/unauthorized'
@@ -46,6 +48,8 @@ export const routes: Routes = [
       { path: '', component: DirectorHomeComponent },
       { path: 'events', component: DirectorEventsComponent },
       { path: 'events/:internalId', component: EventDetailComponent },
+      { path: 'competitions', component: DirectorCompetitionsComponent },
+      { path: 'competitions/:id', component: CompetitionDetailComponent },
     ]
   },
 

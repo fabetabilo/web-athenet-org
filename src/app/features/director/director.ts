@@ -24,6 +24,7 @@ export class DirectorComponent {
   protected readonly directorMenuItems: MenuItem[] = [
     { label: 'Panel de Control', icon: 'dashboard', route: '/director' },
     { label: 'Eventos', icon: 'analytics', route: '/director/events' },
+    { label: 'Competencias', icon: 'emoji_events', route: '/director/competitions' },
     { label: 'Estadísticas', icon: 'analytics', route: '/director/stats' },
     { label: 'Aprobaciones', icon: 'fact_check', route: '/director/approvals' },
   ]

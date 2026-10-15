@@ -73,8 +73,27 @@ export function bffErrorMessage(err: unknown, fallback: string): string {
       // El BFF responde 503 si cualquiera de sus microservicios no responde (eventos o instituciones).
       return 'Un servicio no está disponible por ahora. Intenta nuevamente en unos minutos.';
     default:
-      return isApiError(err.error) ? err.error.message : fallback;
+      if (!isApiError(err.error)) return fallback;
+      return err.error.code === 'MANAGED_BY_COMPETITION'
+        ? 'Se gestiona desde la competencia.'
+        : err.error.message;
   }
+}
+
+/** ms-competitions trae en `404` un `message` listo para mostrar; `502` usa el mensaje genérico. */
+export function competitionErrorMessage(err: unknown, fallback: string): string {
+  if (err instanceof HttpErrorResponse) {
+    if (err.status === 403) return 'No tienes permisos para gestionar competencias.';
+    if (err.status === 404) return isApiError(err.error) ? err.error.message : fallback;
+    if (err.status === 502) return fallback;
+  }
+  return bffErrorMessage(err, fallback);
+}
+
+/** Código de `fieldErrors` para `field`, si el BFF lo informó. */
+export function bffFieldErrorCode(err: unknown, field: string): string | null {
+  if (!(err instanceof HttpErrorResponse) || !isApiError(err.error)) return null;
+  return err.error.fieldErrors?.find((fe) => fe.field === field)?.code ?? null;
 }
 
 /** `503` o sin respuesta: tiene sentido ofrecer reintentar. */
@@ -150,6 +169,9 @@ export interface DirectorEvent {
   /** Solo en partidos. */
   teamTwo: MatchTeam | null;
   delegate: Delegate | null;
+  /** Solo en copias de partidos de una copa: se gestionan desde la competencia. */
+  competitionId: number | null;
+  competitionMatchId: number | null;
 }
 
 export interface ApiError {
@@ -187,6 +209,78 @@ export interface EventWrite {
   teamTwoInstitutionId: number | null;
   teamTwoCampusId: number | null;
   teamTwoId: number | null;
+  delegateOid: string | null;
+  delegateDisplayName: string | null;
+}
+
+export type CompetitionStatus = 'DRAFT' | 'IN_PROGRESS' | 'FINISHED';
+export type MatchRound = 'ROUND_OF_16' | 'QUARTER_FINAL' | 'SEMI_FINAL' | 'FINAL';
+export type MatchStatus = 'SCHEDULED' | 'IN_PROGRESS' | 'FINISHED';
+
+export interface DirectorCompetition {
+  id: number;
+  name: string;
+  type: 'CUP';
+  sport: SportRef;
+  season: string;
+  description: string | null;
+  competitionImg: string;
+  status: CompetitionStatus;
+  /** `yyyy-MM-dd` */
+  startDate: string | null;
+  /** `yyyy-MM-dd` */
+  endDate: string | null;
+}
+
+export interface CompetitionWrite {
+  name: string;
+  sportId: number;
+  season: string;
+  description: string | null;
+  competitionImg: string;
+  startDate: string | null;
+  endDate: string | null;
+}
+
+export interface CompetitionTeam {
+  teamId: number;
+  name: string;
+  logoUrl: string | null;
+  institution: InstitutionRef;
+}
+
+export interface MatchTeamRef { id: number; name: string | null; logoUrl: string | null; }
+
+export interface DirectorMatch {
+  id: number;
+  round: MatchRound;
+  roundLabel: string;
+  /** 1..N dentro de la ronda. */
+  position: number;
+  /** `yyyy-MM-dd` */
+  date: string | null;
+  /** `HH:mm` */
+  time: string | null;
+  location: string | null;
+  address: string | null;
+  /** `null`: por definir. */
+  homeTeam: MatchTeamRef | null;
+  awayTeam: MatchTeamRef | null;
+  delegate: Delegate | null;
+  status: MatchStatus;
+  homeScore: number | null;
+  awayScore: number | null;
+}
+
+/** El `PUT` reemplaza el partido completo: lo no definido va en `null`. */
+export interface MatchWrite {
+  date: string | null;
+  time: string | null;
+  location: string | null;
+  address: string | null;
+  homeTeamId: number | null;
+  awayTeamId: number | null;
+  /** Van juntos o ambos en `null`. */
   delegateOid: string | null;
   delegateDisplayName: string | null;
 }

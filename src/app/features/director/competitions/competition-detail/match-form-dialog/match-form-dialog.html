@@ -1,0 +1,122 @@
+<div class="dialog-shell">
+  <div class="dialog-header">
+    <div class="dialog-icon-wrapper">
+      <mat-icon>scoreboard</mat-icon>
+    </div>
+    <div class="dialog-header-text">
+      <h2 class="dialog-title">{{ data.match.roundLabel }} · {{ data.match.position }}</h2>
+      <p class="dialog-subtitle">{{ data.competition.name }}</p>
+    </div>
+  </div>
+
+  <form class="dialog-body" [formGroup]="form" (ngSubmit)="onSubmit()" autocomplete="off">
+    @if (published) {
+      <div class="info-banner">
+        <mat-icon>info_outline</mat-icon>
+        <span>Partido publicado: no puede quedar sin fecha, hora ni delegado.</span>
+      </div>
+    }
+
+    <span class="section-title">Equipos</span>
+    @if (drawEditable) {
+      <div class="form-row two-col">
+        <mat-form-field appearance="outline">
+          <mat-label>Local</mat-label>
+          <mat-select formControlName="homeTeamId">
+            <mat-option [value]="null">Por definir</mat-option>
+            @for (team of homeOptions(); track team.teamId) {
+              <mat-option [value]="team.teamId">{{ team.name }}</mat-option>
+            }
+          </mat-select>
+        </mat-form-field>
+
+        <mat-form-field appearance="outline">
+          <mat-label>Visita</mat-label>
+          <mat-select formControlName="awayTeamId">
+            <mat-option [value]="null">Por definir</mat-option>
+            @for (team of awayOptions(); track team.teamId) {
+              <mat-option [value]="team.teamId">{{ team.name }}</mat-option>
+            }
+          </mat-select>
+        </mat-form-field>
+      </div>
+    } @else {
+      <div class="matchup-readonly">
+        <span [class.muted]="!data.match.homeTeam">{{ data.match.homeTeam?.name ?? 'Por definir' }}</span>
+        <span class="vs">vs</span>
+        <span [class.muted]="!data.match.awayTeam">{{ data.match.awayTeam?.name ?? 'Por definir' }}</span>
+      </div>
+      @if (data.match.round !== 'ROUND_OF_16') {
+        <p class="field-note">Los equipos llegan solos desde la ronda anterior.</p>
+      }
+    }
+
+    <span class="section-title">Programación</span>
+    <div class="form-row two-col">
+      <mat-form-field appearance="outline">
+        <mat-label>Fecha</mat-label>
+        <input matInput [matDatepicker]="datePicker" formControlName="date" />
+        <mat-datepicker-toggle matIconSuffix [for]="datePicker" />
+        <mat-datepicker #datePicker />
+        <mat-error>{{ fieldError('date') }}</mat-error>
+      </mat-form-field>
+
+      <mat-form-field appearance="outline">
+        <mat-label>Hora</mat-label>
+        <input matInput [matTimepicker]="timePicker" formControlName="time" />
+        <mat-timepicker-toggle matIconSuffix [for]="timePicker" />
+        <mat-timepicker #timePicker />
+        <mat-error>{{ fieldError('time') }}</mat-error>
+      </mat-form-field>
+    </div>
+
+    <div class="form-row two-col">
+      <mat-form-field appearance="outline">
+        <mat-label>Lugar</mat-label>
+        <mat-icon matPrefix>location_on</mat-icon>
+        <input matInput formControlName="location" />
+      </mat-form-field>
+
+      <mat-form-field appearance="outline">
+        <mat-label>Dirección</mat-label>
+        <mat-icon matPrefix>map</mat-icon>
+        <input matInput formControlName="address" />
+      </mat-form-field>
+    </div>
+
+    <div class="form-row">
+      <mat-form-field appearance="outline">
+        <mat-label>Delegado</mat-label>
+        <mat-icon matPrefix>sports</mat-icon>
+        <mat-select formControlName="delegateOid">
+          @if (!published) {
+            <mat-option [value]="null">Sin asignar</mat-option>
+          }
+          @for (opt of delegateOptions(); track opt.oid) {
+            <mat-option [value]="opt.oid">{{ opt.displayName }}</mat-option>
+          }
+        </mat-select>
+        @if (delegatesError()) {
+          <mat-hint>No se pudo cargar la lista de delegados.</mat-hint>
+        } @else {
+          <mat-hint>Solo este delegado podrá iniciar y finalizar el partido.</mat-hint>
+        }
+        <mat-error>{{ fieldError('delegateOid') }}</mat-error>
+      </mat-form-field>
+    </div>
+
+    @if (error(); as message) {
+      <div class="form-error-banner">
+        <mat-icon>error_outline</mat-icon>
+        <span>{{ message }}</span>
+      </div>
+    }
+  </form>
+
+  <div class="dialog-actions">
+    <app-button variant="secondary" [disabled]="saving()" (btnClick)="onCancel()">Cancelar</app-button>
+    <app-button variant="primary" icon="save" [loading]="saving()" (btnClick)="onSubmit()">
+      Guardar
+    </app-button>
+  </div>
+</div>
