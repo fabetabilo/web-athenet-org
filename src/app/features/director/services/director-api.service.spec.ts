@@ -43,8 +43,6 @@ describe('DirectorApiService', () => {
       institution: { id: 2, name: 'Universidad de Chile', acronym: 'UCH' },
     },
     delegate: { oid: '3f2b9c1e-5a7d-4c1b-9e2f-1d0a8b6c4e21', displayName: 'María Pérez' },
-    competitionId: null,
-    competitionMatchId: null,
   };
 
   /** Jornada de varios días, sin deporte, organizada por una institución. */

@@ -1,6 +1,6 @@
 import { Component, computed, inject, signal } from '@angular/core';
 import { toSignal } from '@angular/core/rxjs-interop';
-import { FormBuilder, ReactiveFormsModule, Validators } from '@angular/forms';
+import { FormBuilder, ReactiveFormsModule } from '@angular/forms';
 import { MAT_DIALOG_DATA, MatDialogModule, MatDialogRef } from '@angular/material/dialog';
 import { MatFormFieldModule } from '@angular/material/form-field';
 import { MatInputModule } from '@angular/material/input';
@@ -29,7 +29,6 @@ import {
 } from '../../../services/bff';
 import { controlErrorMessage } from '../../../events/event-detail/control-error';
 import { withSelected } from '../../../events/event-detail/team-picker/team-picker';
-import { missingMatchData } from '../../competition-status';
 
 export interface MatchFormDialogData {
   competition: DirectorCompetition;
@@ -70,18 +69,15 @@ export class MatchFormDialogComponent {
   /** El sorteo solo existe en octavos y con la copa en borrador. */
   protected readonly drawEditable =
     this.data.competition.status === 'DRAFT' && this.match.round === 'ROUND_OF_16';
-  /** Con la copa en curso, un partido completo no puede perder datos (`409`). */
-  protected readonly published =
-    this.data.competition.status === 'IN_PROGRESS' && missingMatchData(this.match).length === 0;
 
   protected readonly form = this.fb.group({
-    date: [parseLocalIsoDate(this.match.date), this.published ? Validators.required : []],
-    time: [parseLocalTime(this.match.time), this.published ? Validators.required : []],
+    date: [parseLocalIsoDate(this.match.date)],
+    time: [parseLocalTime(this.match.time)],
     location: [this.match.location ?? ''],
     address: [this.match.address ?? ''],
     homeTeamId: [this.match.homeTeam?.id ?? (null as number | null)],
     awayTeamId: [this.match.awayTeam?.id ?? (null as number | null)],
-    delegateOid: [this.match.delegate?.oid ?? (null as string | null), this.published ? Validators.required : []],
+    delegateOid: [this.match.delegate?.oid ?? (null as string | null)],
   });
 
   private readonly homeValue = toSignal(this.form.controls.homeTeamId.valueChanges, {
