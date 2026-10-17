@@ -240,8 +240,7 @@ export class CompetitionDetailComponent implements OnInit {
       title: 'Iniciar copa',
       message: '¿Confirmas el inicio de',
       targetName: competition.name,
-      description:
-        'Después del inicio el sorteo ya no se puede cambiar. Los partidos completos aparecerán en el calendario de eventos en unos segundos.',
+      description: 'Después del inicio el sorteo ya no se puede cambiar.',
       confirmText: 'Iniciar copa',
       confirmVariant: 'primary',
       confirmIcon: 'play_arrow',
@@ -253,7 +252,7 @@ export class CompetitionDetailComponent implements OnInit {
         next: (started) => {
           this.competition.set(started);
           this.busy.set(false);
-          this.notification.success('Copa iniciada. Los partidos completos llegarán al calendario en unos segundos.');
+          this.notification.success('Copa iniciada.');
           this.loadMatches();
         },
         error: (err: unknown) => this.actionFailed(err, 'No se pudo iniciar la copa.'),

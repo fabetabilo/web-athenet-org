@@ -135,9 +135,6 @@ export class EventDetailComponent implements OnInit {
 
   protected readonly hasType = computed(() => !!this.typeValue());
 
-  /** Copia de un partido de copa: solo lectura, se gestiona desde la competencia. */
-  protected readonly isCompetitionCopy = computed(() => this.event()?.competitionMatchId != null);
-
   /** Del catálogo de tipos; sin catálogo, se infiere del evento guardado. */
   protected readonly requiresMatchup = computed(() => {
     const type = this.typeValue();
@@ -279,12 +276,7 @@ export class EventDetailComponent implements OnInit {
     this.router.navigate(['/director/events']);
   }
 
-  onOpenCompetition(): void {
-    this.router.navigate(['/director/competitions', this.event()?.competitionId]);
-  }
-
   onEdit(): void {
-    if (this.isCompetitionCopy()) return;
     this.form.enable();
     this.form.get('internalId')?.disable();
     this.photosArray.controls.forEach((c) => c.enable());

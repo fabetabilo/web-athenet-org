@@ -73,10 +73,7 @@ export function bffErrorMessage(err: unknown, fallback: string): string {
       // El BFF responde 503 si cualquiera de sus microservicios no responde (eventos o instituciones).
       return 'Un servicio no está disponible por ahora. Intenta nuevamente en unos minutos.';
     default:
-      if (!isApiError(err.error)) return fallback;
-      return err.error.code === 'MANAGED_BY_COMPETITION'
-        ? 'Se gestiona desde la competencia.'
-        : err.error.message;
+      return isApiError(err.error) ? err.error.message : fallback;
   }
 }
 
@@ -169,9 +166,6 @@ export interface DirectorEvent {
   /** Solo en partidos. */
   teamTwo: MatchTeam | null;
   delegate: Delegate | null;
-  /** Solo en copias de partidos de una copa: se gestionan desde la competencia. */
-  competitionId: number | null;
-  competitionMatchId: number | null;
 }
 
 export interface ApiError {

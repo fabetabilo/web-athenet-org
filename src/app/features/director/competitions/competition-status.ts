@@ -23,7 +23,7 @@ export const MATCH_STATUS: Record<string, StatusStyle> = {
 
 export const CUP_SIZE = 16;
 
-/** Lo que le falta al partido para que el delegado pueda iniciarlo y aparezca en el calendario. */
+/** Lo que le falta al partido para que el delegado pueda iniciarlo. */
 export function missingMatchData(match: DirectorMatch): string[] {
   const missing: string[] = [];
   if (!match.homeTeam || !match.awayTeam) missing.push('equipos');
