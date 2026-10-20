@@ -115,7 +115,7 @@ export class CompetitionDetailComponent implements OnInit {
     { key: 'delegate', header: 'Delegado', width: '150px' },
     { key: 'status', header: 'Estado', width: '150px' },
     { key: 'homeScore', header: 'Resultado', width: '100px', align: 'center' },
-    { key: 'actions', header: 'Acciones', width: '90px', align: 'center', stickyEnd: true },
+    { key: 'actions', header: 'Acciones', width: '110px', align: 'center', stickyEnd: true },
   ];
 
   protected readonly trackTeam = (_: number, team: CompetitionTeam) => team.teamId;
@@ -327,6 +327,36 @@ export class CompetitionDetailComponent implements OnInit {
       if (!saved) return;
       this.notification.success('Encuentro guardado.');
       this.loadMatches();
+    });
+  }
+
+  protected canConfirmMatch(match: DirectorMatch): boolean {
+    return this.canEditMatch(match) && !match.scheduleConfirmed;
+  }
+
+  onConfirmMatch(match: DirectorMatch): void {
+    if (this.busy() || !this.canConfirmMatch(match) || missingMatchData(match).length) return;
+
+    this.confirm({
+      title: 'Confirmar programación',
+      message: '¿Confirmas la programación de',
+      targetName: `${match.roundLabel} · ${match.position}`,
+      description: 'Con la programación confirmada el delegado puede iniciar el encuentro. Si después la cambias, tendrás que confirmarla de nuevo.',
+      confirmText: 'Confirmar',
+      confirmVariant: 'primary',
+      confirmIcon: 'event_available',
+      variant: 'info',
+      icon: 'event_available',
+    }, () => {
+      this.busy.set(true);
+      this.competitionApi.confirmMatch(this.id, match.id).subscribe({
+        next: (confirmed) => {
+          this.matches.update((prev) => prev.map((m) => (m.id === confirmed.id ? confirmed : m)));
+          this.busy.set(false);
+          this.notification.success('Programación confirmada.');
+        },
+        error: (err: unknown) => this.actionFailed(err, 'No se pudo confirmar la programación.'),
+      });
     });
   }
 

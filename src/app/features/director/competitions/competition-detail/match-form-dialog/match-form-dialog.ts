@@ -1,6 +1,7 @@
 import { Component, computed, inject, signal } from '@angular/core';
-import { toSignal } from '@angular/core/rxjs-interop';
-import { FormBuilder, ReactiveFormsModule } from '@angular/forms';
+import { takeUntilDestroyed, toSignal } from '@angular/core/rxjs-interop';
+import { FormBuilder, ReactiveFormsModule, type ValidatorFn } from '@angular/forms';
+import { merge } from 'rxjs';
 import { MAT_DIALOG_DATA, MatDialogModule, MatDialogRef } from '@angular/material/dialog';
 import { MatFormFieldModule } from '@angular/material/form-field';
 import { MatInputModule } from '@angular/material/input';
@@ -14,6 +15,7 @@ import { ButtonComponent } from '../../../../../shared/components/button/button'
 import {
   asLocalIsoDate,
   asLocalTime,
+  endBeforeStartField,
   parseLocalIsoDate,
   parseLocalTime,
 } from '../../../../../shared/utils/local-date';
@@ -73,6 +75,8 @@ export class MatchFormDialogComponent {
   protected readonly form = this.fb.group({
     date: [parseLocalIsoDate(this.match.date)],
     time: [parseLocalTime(this.match.time)],
+    endDate: [parseLocalIsoDate(this.match.endDate), endBeforeStart('endDate')],
+    endTime: [parseLocalTime(this.match.endTime), endBeforeStart('endTime')],
     location: [this.match.location ?? ''],
     address: [this.match.address ?? ''],
     homeTeamId: [this.match.homeTeam?.id ?? (null as number | null)],
@@ -113,6 +117,16 @@ export class MatchFormDialogComponent {
       next: (delegates) => this.delegates.set(delegates),
       error: () => this.delegatesError.set(true),
     });
+
+    const { date, time, endDate, endTime } = this.form.controls;
+    const revalidateEnd = () => {
+      endDate.updateValueAndValidity({ emitEvent: false });
+      endTime.updateValueAndValidity({ emitEvent: false });
+    };
+    revalidateEnd();
+    merge(date.valueChanges, time.valueChanges, endDate.valueChanges, endTime.valueChanges)
+      .pipe(takeUntilDestroyed())
+      .subscribe(revalidateEnd);
   }
 
   onCancel(): void {
@@ -139,6 +153,8 @@ export class MatchFormDialogComponent {
       awayTeamId: this.drawEditable ? raw.awayTeamId : (this.match.awayTeam?.id ?? null),
       delegateOid: delegate?.oid ?? null,
       delegateDisplayName: delegate?.displayName ?? null,
+      endDate: asLocalIsoDate(raw.endDate),
+      endTime: asLocalTime(raw.endTime),
     };
 
     this.saving.set(true);
@@ -158,4 +174,20 @@ export class MatchFormDialogComponent {
   private drawOptions(otherSide: number | null): CompetitionTeam[] {
     return this.data.roster.filter((t) => !this.drawnElsewhere.has(t.teamId) && t.teamId !== otherSide);
   }
+}
+
+/** Marca endDate si es otro día, endTime si es el mismo. */
+function endBeforeStart(field: 'endDate' | 'endTime'): ValidatorFn {
+  return (control) => {
+    const group = control.parent;
+    if (!group) return null;
+    const value = (name: string) => group.get(name)?.value;
+    const wrong = endBeforeStartField(
+      asLocalIsoDate(value('date')),
+      asLocalTime(value('time')),
+      asLocalIsoDate(value('endDate')),
+      asLocalTime(value('endTime')),
+    );
+    return wrong === field ? { endBeforeStart: true } : null;
+  };
 }

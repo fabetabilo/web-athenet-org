@@ -25,6 +25,7 @@ describe('DelegateEventsComponent', () => {
     status: 'SCHEDULED',
     homeScore: null,
     awayScore: null,
+    scheduleConfirmed: true,
   };
   const IN_PROGRESS: DelegateMatch = { ...SCHEDULED, id: 8, status: 'IN_PROGRESS' };
   const FINISHED: DelegateMatch = { ...SCHEDULED, id: 9, status: 'FINISHED', homeScore: 2, awayScore: 1 };

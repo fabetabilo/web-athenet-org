@@ -45,6 +45,9 @@
     }
 
     <span class="section-title">Programación</span>
+    @if (data.match.scheduleConfirmed) {
+      <p class="field-note">Programación confirmada: si la cambias, tendrás que confirmarla de nuevo.</p>
+    }
     <div class="form-row two-col">
       <mat-form-field appearance="outline">
         <mat-label>Fecha</mat-label>
@@ -60,6 +63,24 @@
         <mat-timepicker-toggle matIconSuffix [for]="timePicker" />
         <mat-timepicker #timePicker />
         <mat-error>{{ fieldError('time') }}</mat-error>
+      </mat-form-field>
+    </div>
+
+    <div class="form-row two-col">
+      <mat-form-field appearance="outline">
+        <mat-label>Fecha de término</mat-label>
+        <input matInput [matDatepicker]="endDatePicker" formControlName="endDate" />
+        <mat-datepicker-toggle matIconSuffix [for]="endDatePicker" />
+        <mat-datepicker #endDatePicker />
+        <mat-error>{{ fieldError('endDate') }}</mat-error>
+      </mat-form-field>
+
+      <mat-form-field appearance="outline">
+        <mat-label>Hora de término</mat-label>
+        <input matInput [matTimepicker]="endTimePicker" formControlName="endTime" />
+        <mat-timepicker-toggle matIconSuffix [for]="endTimePicker" />
+        <mat-timepicker #endTimePicker />
+        <mat-error>{{ fieldError('endTime') }}</mat-error>
       </mat-form-field>
     </div>
 

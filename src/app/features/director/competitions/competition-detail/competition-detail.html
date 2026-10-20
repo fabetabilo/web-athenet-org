@@ -230,10 +230,16 @@
                     <app-pill [variant]="matchStatus[row.status].variant" [dot]="true">
                       {{ matchStatus[row.status].label }}
                     </app-pill>
-                    @if (row.status === 'SCHEDULED' && missing(row).length) {
-                      <span class="missing-note" [title]="'Falta: ' + missing(row).join(', ')">
-                        Falta {{ missing(row).join(', ') }}
-                      </span>
+                    @if (row.status === 'SCHEDULED') {
+                      @if (missing(row).length) {
+                        <span class="missing-note" [title]="'Falta: ' + missing(row).join(', ')">
+                          Falta {{ missing(row).join(', ') }}
+                        </span>
+                      } @else if (!row.scheduleConfirmed) {
+                        <span class="missing-note">Por confirmar</span>
+                      } @else {
+                        <span class="confirmed-note">Confirmado</span>
+                      }
                     }
                   </div>
                 </ng-template>
@@ -259,6 +265,19 @@
                       >
                         <mat-icon>edit</mat-icon>
                       </button>
+                      @if (canConfirmMatch(row)) {
+                        <button
+                          mat-icon-button
+                          class="action-btn confirm-btn"
+                          type="button"
+                          [disabled]="busy() || missing(row).length > 0"
+                          (click)="onConfirmMatch(row)"
+                          [title]="missing(row).length ? 'Completa la programación para confirmar' : 'Confirmar programación'"
+                          aria-label="Confirmar programación"
+                        >
+                          <mat-icon>event_available</mat-icon>
+                        </button>
+                      }
                     } @else {
                       <mat-icon class="readonly-icon" title="Solo lectura">lock</mat-icon>
                     }

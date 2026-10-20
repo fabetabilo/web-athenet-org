@@ -86,6 +86,13 @@ export class DirectorCompetitionApiService {
     );
   }
 
+  /** Exige equipos, delegado, inicio y término posterior; es idempotente. */
+  confirmMatch(id: number, matchId: number): Observable<DirectorMatch> {
+    return withBffToken(this.msal, (headers) =>
+      this.http.post<DirectorMatch>(`${this.competitionUrl(id)}/matches/${matchId}/confirm`, null, { headers }),
+    );
+  }
+
   private competitionUrl(id: number): string {
     return `${this.competitionsUrl}/${id}`;
   }

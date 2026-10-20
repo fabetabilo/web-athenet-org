@@ -22,6 +22,7 @@ describe('DelegateApiService', () => {
     status: 'SCHEDULED',
     homeScore: null,
     awayScore: null,
+    scheduleConfirmed: true,
   };
 
   const matchesUrl = `${bffDelegateUrl()}/matches`;
