@@ -23,12 +23,13 @@ export const MATCH_STATUS: Record<string, StatusStyle> = {
 
 export const CUP_SIZE = 16;
 
-/** Lo que le falta al partido para que el delegado pueda iniciarlo. */
+/** Lo que le falta al partido para que el director pueda confirmar su programación. */
 export function missingMatchData(match: DirectorMatch): string[] {
   const missing: string[] = [];
   if (!match.homeTeam || !match.awayTeam) missing.push('equipos');
   if (!match.date) missing.push('fecha');
   if (!match.time) missing.push('hora');
+  if (!match.endDate || !match.endTime) missing.push('término');
   if (!match.delegate) missing.push('delegado');
   return missing;
 }

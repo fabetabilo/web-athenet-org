@@ -54,9 +54,10 @@ describe('delegate-bff', () => {
       awayTeam: { id: 2, name: 'UCH', logoUrl: null },
       date: '2026-10-24',
       time: '18:00',
+      scheduleConfirmed: true,
     } as DelegateMatch;
 
-    it('no debe faltar nada en un partido completo', () => {
+    it('no debe faltar nada en un partido completo y confirmado', () => {
       expect(missingToStart(COMPLETE)).toEqual([]);
     });
 
@@ -66,6 +67,10 @@ describe('delegate-bff', () => {
         'fecha',
         'hora',
       ]);
+    });
+
+    it('debe exigir la confirmación del director aunque esté completo', () => {
+      expect(missingToStart({ ...COMPLETE, scheduleConfirmed: false })).toEqual(['confirmación del director']);
     });
   });
 });

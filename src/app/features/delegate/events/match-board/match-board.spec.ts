@@ -25,6 +25,7 @@ describe('MatchBoardComponent', () => {
     status: 'SCHEDULED',
     homeScore: null,
     awayScore: null,
+    scheduleConfirmed: true,
   };
   const IN_PROGRESS: DelegateMatch = { ...SCHEDULED, status: 'IN_PROGRESS' };
   const FINISHED: DelegateMatch = { ...SCHEDULED, status: 'FINISHED', homeScore: 2, awayScore: 1 };
@@ -135,6 +136,13 @@ describe('MatchBoardComponent', () => {
       setup({ ...SCHEDULED, awayTeam: null });
 
       expect(text()).toContain('Falta equipos');
+      expect(button('Iniciar encuentro')!.disabled).toBe(true);
+    });
+
+    it('debe deshabilitar "Iniciar" hasta que el director confirme la programación', () => {
+      setup({ ...SCHEDULED, scheduleConfirmed: false });
+
+      expect(text()).toContain('Falta confirmación del director');
       expect(button('Iniciar encuentro')!.disabled).toBe(true);
     });
   });

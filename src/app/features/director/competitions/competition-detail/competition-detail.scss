@@ -159,6 +159,20 @@
   color: var(--color-warning-text);
 }
 
+.confirmed-note {
+  font-size: 0.6875rem;
+  color: var(--pill-success-text);
+}
+
+.action-btn.confirm-btn {
+  color: var(--action-btn-edit);
+
+  &:hover:not(:disabled) {
+    background: var(--action-btn-hover-bg);
+    color: var(--pill-success-text);
+  }
+}
+
 .score {
   font-weight: 700;
   font-variant-numeric: tabular-nums;

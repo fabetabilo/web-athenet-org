@@ -271,6 +271,12 @@ export interface DirectorMatch {
   status: MatchStatus;
   homeScore: number | null;
   awayScore: number | null;
+  /** `yyyy-MM-dd` */
+  endDate: string | null;
+  /** `HH:mm` */
+  endTime: string | null;
+  /** El delegado solo puede iniciarlo confirmado; cualquier cambio de programación lo desconfirma. */
+  scheduleConfirmed: boolean;
 }
 
 /** El `PUT` reemplaza el partido completo: lo no definido va en `null`. */
@@ -284,4 +290,6 @@ export interface MatchWrite {
   /** Van juntos o ambos en `null`. */
   delegateOid: string | null;
   delegateDisplayName: string | null;
+  endDate: string | null;
+  endTime: string | null;
 }

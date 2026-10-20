@@ -31,6 +31,8 @@ export interface DelegateMatch {
   status: MatchStatus;
   homeScore: number | null;
   awayScore: number | null;
+  /** ms-competitions rechaza el inicio hasta que el director confirma la programación. */
+  scheduleConfirmed: boolean;
 }
 
 /** Resultado final o su corrección. No hay empates. */
@@ -57,5 +59,6 @@ export function missingToStart(match: DelegateMatch): string[] {
   if (!match.homeTeam || !match.awayTeam) missing.push('equipos');
   if (!match.date) missing.push('fecha');
   if (!match.time) missing.push('hora');
+  if (!match.scheduleConfirmed) missing.push('confirmación del director');
   return missing;
 }
