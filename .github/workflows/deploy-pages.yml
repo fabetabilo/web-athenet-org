@@ -33,8 +33,7 @@ jobs:
           CLIENT_ID: ${{ secrets.ENTRA_CLIENT_ID }}
           TENANT_ID: ${{ secrets.ENTRA_TENANT_ID }}
           CUSTOM_REDIRECT_URI: ${{ secrets.REDIRECT_URI }}
-          API_URL: ${{ secrets.APP_API_URL }}
-          EVENTS_API_URL: ${{ secrets.APP_EVENTS_API_URL }}
+          BFF_URL: ${{ secrets.APP_BFF_URL }}
         run: |
           mkdir -p src/environments
           REPO_NAME="${GITHUB_REPOSITORY#*/}"
@@ -46,8 +45,8 @@ jobs:
             clientId: '${CLIENT_ID}',
             tenantId: '${TENANT_ID}',
             redirectUri: '${REDIRECT}',
-            apiUrl: '${API_URL}',
-            eventsApiUrl: '${EVENTS_API_URL}',
+            bffUrl: '${BFF_URL}',
+            inactivityMinutes: 30,
           };
           EOF
 

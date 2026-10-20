@@ -5,6 +5,13 @@ import { InteractionRequiredAuthError } from '@azure/msal-browser';
 import { environment } from '../../../../environments/environment';
 import { loginRequest } from '../../../../auth/loginRequest';
 
+/**
+ * TODO(bff-shared): este archivo ya es común a director, delegate y admin.
+ * Mover lo genérico (`bffUrl`, `withBffToken`, `ApiError`, `bffFieldErrorCode`,
+ * `isRetryableBffError`) a `src/app/shared/` y dejar aquí solo los tipos y
+ * mensajes de director. Consumidores: `grep "director/services/bff"`.
+ */
+
 function bffUrl(): string {
   return environment.bffUrl.replace(/\/+$/, '');
 }

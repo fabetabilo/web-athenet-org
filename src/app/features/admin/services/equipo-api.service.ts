@@ -1,13 +1,12 @@
 import { Injectable, inject } from '@angular/core';
-import { HttpClient, HttpHeaders, HttpParams } from '@angular/common/http';
-import { Observable, switchMap } from 'rxjs';
+import { HttpClient, HttpParams } from '@angular/common/http';
+import { Observable, map } from 'rxjs';
 import { MsalService } from '@azure/msal-angular';
-import { environment } from '../../../../environments/environment';
-import { loginRequest } from '../../../../auth/loginRequest';
+import { bffAdminUrl, withBffToken, type AdminTeam, type AdminTeamWrite } from './admin-bff';
 
 export type Categoria = 'MASCULINO' | 'FEMENINO' | 'MIXTO';
 
-/** Coincide con EquipoResponse del backend. */
+/** Modelo de las vistas; el BFF lo entrega en inglés (`AdminTeam`). */
 export interface Equipo {
   id: number;
   nombre: string;
@@ -27,68 +26,71 @@ export interface Equipo {
  */
 export type EquipoInput = Omit<Equipo, 'id' | 'sedeNombre' | 'deporteNombre' | 'activo'>;
 
+function toEquipo(dto: AdminTeam): Equipo {
+  return {
+    id: dto.id,
+    nombre: dto.name,
+    categoria: dto.division as Categoria,
+    entrenador: dto.coach,
+    logoUrl: dto.logoUrl,
+    sedeId: dto.campusId,
+    sedeNombre: dto.campusName,
+    deporteId: dto.sportId,
+    deporteNombre: dto.sportName,
+    activo: dto.active,
+  };
+}
+
+function toTeamWrite(data: EquipoInput): AdminTeamWrite {
+  return {
+    name: data.nombre,
+    division: data.categoria,
+    coach: data.entrenador,
+    logoUrl: data.logoUrl,
+    campusId: data.sedeId,
+    sportId: data.deporteId,
+  };
+}
+
+/** CRUD de equipos en el BFF (`/api/admin/teams`); todo exige el rol `admin`. */
 @Injectable({ providedIn: 'root' })
 export class EquipoApiService {
   private readonly http = inject(HttpClient);
-  private readonly authService = inject(MsalService, { optional: true });
-  private readonly baseUrl = (environment.apiUrl ?? 'http://localhost:8080').replace(/\/+$/, '');
+  private readonly msal = inject(MsalService, { optional: true });
+  private readonly baseUrl = `${bffAdminUrl()}/teams`;
 
-  /**
-   * GET /api/v1/equipos — pública. Si se pasa sedeId, filtra por esa sede
-   * (mismo endpoint con query param, como hace el backend).
-   */
+  /** Si se pasa sedeId, filtra por esa sede (`?campusId=` en el BFF). */
   getEquipos(sedeId?: number): Observable<Equipo[]> {
     let params = new HttpParams();
     if (sedeId != null) {
-      params = params.set('sedeId', sedeId);
+      params = params.set('campusId', sedeId);
     }
-    return this.http.get<Equipo[]>(`${this.baseUrl}/api/v1/equipos`, { params });
+    return withBffToken(this.msal, (headers) =>
+      this.http.get<AdminTeam[]>(this.baseUrl, { headers, params }),
+    ).pipe(map((list) => list.map(toEquipo)));
   }
 
   getEquipo(id: number): Observable<Equipo> {
-    return this.http.get<Equipo>(`${this.baseUrl}/api/v1/equipos/${id}`);
+    return withBffToken(this.msal, (headers) =>
+      this.http.get<AdminTeam>(`${this.baseUrl}/${id}`, { headers }),
+    ).pipe(map(toEquipo));
   }
 
-  /** POST /api/v1/equipos — protegida, exige rol `admin`. */
   crearEquipo(data: EquipoInput): Observable<Equipo> {
-    return this.conToken((headers) =>
-      this.http.post<Equipo>(`${this.baseUrl}/api/v1/equipos`, data, { headers }),
-    );
+    return withBffToken(this.msal, (headers) =>
+      this.http.post<AdminTeam>(this.baseUrl, toTeamWrite(data), { headers }),
+    ).pipe(map(toEquipo));
   }
 
   actualizarEquipo(id: number, data: EquipoInput): Observable<Equipo> {
-    return this.conToken((headers) =>
-      this.http.put<Equipo>(`${this.baseUrl}/api/v1/equipos/${id}`, data, { headers }),
-    );
+    return withBffToken(this.msal, (headers) =>
+      this.http.put<AdminTeam>(`${this.baseUrl}/${id}`, toTeamWrite(data), { headers }),
+    ).pipe(map(toEquipo));
   }
 
   eliminarEquipo(id: number): Observable<void> {
-    return this.conToken((headers) =>
-      this.http.delete<void>(`${this.baseUrl}/api/v1/equipos/${id}`, { headers }),
+    return withBffToken(this.msal, (headers) =>
+      this.http.delete<void>(`${this.baseUrl}/${id}`, { headers }),
     );
-  }
-
-  /** Helper compartido: mismo patrón que los otros *ApiService.conToken(). */
-  private conToken<T>(request: (headers: HttpHeaders) => Observable<T>): Observable<T> {
-    const account =
-      this.authService?.instance.getActiveAccount() ??
-      this.authService?.instance.getAllAccounts()[0];
-
-    if (this.authService && account) {
-      if (!this.authService.instance.getActiveAccount()) {
-        this.authService.instance.setActiveAccount(account);
-      }
-
-      return this.authService.acquireTokenSilent({ ...loginRequest, account }).pipe(
-        switchMap((tokenResult) => {
-          const headers = new HttpHeaders({
-            Authorization: `Bearer ${tokenResult.idToken}`,
-          });
-          return request(headers);
-        }),
-      );
-    }
-
-    return request(new HttpHeaders());
   }
 }
