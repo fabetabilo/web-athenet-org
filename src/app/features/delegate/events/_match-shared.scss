@@ -1,0 +1,151 @@
+// Estados y piezas comunes de "Mis eventos" y del tablero del encuentro.
+// Locales al delegado: los del director arrastran estilos de formularios y
+// romperían el presupuesto de 8 kB por componente.
+
+.page-loading {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: var(--space-3);
+  padding: var(--space-10) 0;
+  color: var(--color-text-muted);
+  font-size: 0.9375rem;
+}
+
+.loading-spinner {
+  width: 22px;
+  height: 22px;
+  border: 2.5px solid var(--color-border);
+  border-top-color: var(--color-primary);
+  border-radius: var(--radius-full);
+  animation: spin 0.7s linear infinite;
+  flex-shrink: 0;
+}
+
+@keyframes spin {
+  to { transform: rotate(360deg); }
+}
+
+.error-banner {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: var(--space-3);
+  padding: var(--space-3) var(--space-4);
+  background-color: var(--color-error-bg);
+  border: 1px solid var(--color-error-border);
+  border-radius: var(--radius-lg);
+  color: var(--color-error-text);
+  font-size: 0.875rem;
+
+  .error-content {
+    display: flex;
+    align-items: center;
+    gap: var(--space-2);
+    margin-right: auto;
+  }
+
+  mat-icon {
+    font-size: 20px;
+    width: 20px;
+    height: 20px;
+    flex-shrink: 0;
+  }
+
+  .retry-btn {
+    display: inline-flex;
+    align-items: center;
+    gap: var(--space-1);
+    padding: var(--space-1) var(--space-3);
+    border: 1px solid var(--color-error-border);
+    border-radius: var(--radius-md);
+    background: var(--color-white);
+    color: var(--color-error-text);
+    font-size: 0.8125rem;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all var(--transition-fast);
+
+    &:hover {
+      background: var(--color-error-text);
+      color: var(--color-white);
+    }
+
+    mat-icon {
+      font-size: 16px;
+      width: 16px;
+      height: 16px;
+    }
+  }
+}
+
+.state-box {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: var(--space-3);
+  padding: var(--space-10) var(--space-6);
+  text-align: center;
+  background: var(--color-bg-surface);
+  border: 1px dashed var(--color-border);
+  border-radius: var(--radius-xl);
+  color: var(--color-text-muted);
+
+  > mat-icon {
+    font-size: 40px;
+    width: 40px;
+    height: 40px;
+    color: var(--color-text-subtle);
+  }
+
+  .state-title {
+    margin: 0;
+    font-size: 1rem;
+    font-weight: 600;
+    color: var(--color-text-heading);
+  }
+
+  .state-hint {
+    margin: 0;
+    font-size: 0.875rem;
+  }
+}
+
+// Logo con escudo de respaldo: si la imagen falla, se oculta y queda el ícono.
+.team-logo,
+.competition-img {
+  position: relative;
+  flex-shrink: 0;
+  overflow: hidden;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: var(--color-slate-100);
+  color: var(--color-text-subtle);
+
+  img {
+    position: absolute;
+    inset: 0;
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+  }
+}
+
+.team-logo {
+  width: 40px;
+  height: 40px;
+  border-radius: var(--radius-full);
+}
+
+.competition-img {
+  width: 44px;
+  height: 44px;
+  border-radius: var(--radius-lg);
+  border: 1px solid var(--color-border);
+}
+
+.muted {
+  color: var(--color-text-subtle);
+  font-style: italic;
+}

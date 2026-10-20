@@ -1,9 +1,61 @@
-
-.placeholder-note {
-  color: var(--color-text-muted);
-  font-size: 0.875rem;
-  padding: var(--space-6);
+.access-card {
+  display: flex;
+  align-items: center;
+  gap: var(--space-4);
+  max-width: 520px;
+  padding: var(--space-5) var(--space-6);
   background: var(--color-bg-surface);
   border: 1px solid var(--color-border);
   border-radius: var(--radius-xl);
+  box-shadow: var(--shadow-xs);
+  color: inherit;
+  text-decoration: none;
+  transition: all var(--transition-fast);
+
+  &:hover,
+  &:focus-visible {
+    border-color: var(--color-primary-surface-border);
+    box-shadow: 0 0 0 3px var(--color-primary-ring);
+
+    .access-arrow {
+      color: var(--color-primary);
+      transform: translateX(3px);
+    }
+  }
+}
+
+.access-icon {
+  width: 48px;
+  height: 48px;
+  flex-shrink: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: var(--radius-full);
+  background: var(--color-primary-ring);
+  color: var(--color-primary);
+}
+
+.access-text {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  min-width: 0;
+}
+
+.access-title {
+  font-weight: 700;
+  color: var(--color-text-heading);
+}
+
+.access-description {
+  font-size: 0.875rem;
+  color: var(--color-text-muted);
+}
+
+.access-arrow {
+  margin-left: auto;
+  flex-shrink: 0;
+  color: var(--color-text-subtle);
+  transition: all var(--transition-fast);
 }

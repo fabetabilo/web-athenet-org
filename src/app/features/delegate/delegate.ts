@@ -23,7 +23,7 @@ export class DelegateComponent {
 
   protected readonly delegateMenuItems: MenuItem[] = [
     { label: 'Panel de Control', icon: 'dashboard', route: '/delegate' },
-    { label: 'Eventos Designados', icon: 'event', route: '/delegate/events' },
+    { label: 'Mis eventos', icon: 'event', route: '/delegate/events' },
   ]
 
   /** El cierre de sesión vive en SessionService: es el mismo para los dos shells. */

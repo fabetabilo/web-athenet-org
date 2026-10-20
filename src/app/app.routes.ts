@@ -15,6 +15,8 @@ import { DirectorCompetitionsComponent } from './features/director/competitions/
 import { CompetitionDetailComponent } from './features/director/competitions/competition-detail/competition-detail'
 import { DelegateComponent } from './features/delegate/delegate'
 import { DelegateHomeComponent } from './features/delegate/home/home'
+import { DelegateEventsComponent } from './features/delegate/events/events'
+import { MatchBoardComponent } from './features/delegate/events/match-board/match-board'
 import { UnauthorizedComponent } from './shared/unauthorized/unauthorized'
 import { RoleGuard } from '../auth/guards/role.guard'
 
@@ -61,6 +63,8 @@ export const routes: Routes = [
     data: { roles: ['delegate'] },
     children: [
       { path: '', component: DelegateHomeComponent },
+      { path: 'events', component: DelegateEventsComponent },
+      { path: 'events/:id', component: MatchBoardComponent },
     ]
   },
 

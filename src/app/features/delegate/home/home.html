@@ -5,4 +5,14 @@
     <p class="welcome">Bienvenido, {{ accountName }}</p>
   </div>
 </div>
-<p class="placeholder-note">Dashboard del Delegado: en construcción</p>
+
+<a class="access-card" routerLink="/delegate/events">
+  <span class="access-icon">
+    <mat-icon>scoreboard</mat-icon>
+  </span>
+  <span class="access-text">
+    <span class="access-title">Mis eventos</span>
+    <span class="access-description">Inicia tus encuentros y registra el resultado al finalizar.</span>
+  </span>
+  <mat-icon class="access-arrow">arrow_forward</mat-icon>
+</a>
