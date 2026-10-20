@@ -1,12 +1,27 @@
 // Estilos layout compartidos globales, evita duplicados, y mantiene centralizado
+@use '@angular/material' as mat;
+
+// Topbar a todo el ancho arriba; debajo, sidebar + contenido. La topbar queda
+// fija porque la página no scrollea: el scroll vive en .dashboard-content.
 .layout-wrapper {
   display: flex;
+  flex-direction: column;
   height: 100vh;
   width: 100%;
 }
 
+.layout-body {
+  flex: 1;
+  display: flex;
+  // Imprescindible: sin esto .dashboard-content no puede encogerse por debajo
+  // de su contenido y el scroll se va a la página completa en vez del área de
+  // contenido.
+  min-height: 0;
+}
+
 .dashboard-content {
   flex: 1;
+  min-width: 0;
   overflow-y: auto;
   padding: var(--space-10) var(--space-12);
   background: var(--color-bg-main);
@@ -82,6 +97,47 @@
   border-radius: var(--radius-lg);
   border: 1px solid var(--color-border);
   box-shadow: var(--shadow-lg);
+}
+
+// ── Profile Menu (CDK Overlay) ──
+// Menú de perfil de la topbar: mismo fondo y hover que el sidebar. MatMenu pone
+// la clase en el propio panel, no en un ancestro.
+.mat-mdc-menu-panel.profile-menu {
+  @include mat.menu-overrides((
+    container-color: var(--sidebar-bg),
+    container-shape: var(--radius-lg),
+    item-label-text-color: var(--sidebar-text),
+    item-icon-color: var(--sidebar-text),
+    item-icon-size: var(--sidebar-item-icon-size),
+    item-hover-state-layer-color: var(--sidebar-hover),
+    item-focus-state-layer-color: var(--sidebar-hover),
+    item-label-text-font: var(--font-family-base),
+    item-label-text-size: var(--sidebar-item-font-size),
+    // M3 trae label-large (500 y tracking propio); el sidebar usa el texto normal.
+    item-label-text-weight: normal,
+    item-label-text-tracking: normal,
+    item-spacing: var(--sidebar-item-gap),
+    item-leading-spacing: var(--sidebar-item-padding-x),
+    item-trailing-spacing: var(--sidebar-item-padding-x),
+    item-with-icon-leading-spacing: var(--sidebar-item-padding-x),
+    item-with-icon-trailing-spacing: var(--sidebar-item-padding-x),
+  ));
+  min-width: 240px;
+  border: 1px solid var(--sidebar-border);
+
+  // Igual que el padding de .sidebar-nav: el hover queda como pastilla, no de borde a borde.
+  .mat-mdc-menu-content {
+    padding: var(--space-2);
+  }
+
+  // Mismo hover que .nav-link: además del fondo, el texto pasa a blanco.
+  .mat-mdc-menu-item:hover,
+  .mat-mdc-menu-item.cdk-keyboard-focused {
+    @include mat.menu-overrides((
+      item-label-text-color: var(--sidebar-text-active),
+      item-icon-color: var(--sidebar-text-active),
+    ));
+  }
 }
 
 // ── Dialog Modals (CDK Overlay) ──

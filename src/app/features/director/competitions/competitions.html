@@ -1,0 +1,86 @@
+<div class="competitions-page">
+  <div class="dashboard-header">
+    <div class="header-info">
+      <span class="role-badge">Director</span>
+      <h1>Competencias</h1>
+      <p class="welcome">Copas interinstitucionales: nómina, sorteo y programación de partidos</p>
+    </div>
+  </div>
+
+  @if (error()) {
+    <div class="error-banner">
+      <div class="error-content">
+        <mat-icon class="error-icon">error_outline</mat-icon>
+        <span class="error-text">{{ error() }}</span>
+      </div>
+      @if (canRetry()) {
+        <button type="button" class="retry-btn" (click)="loadCompetitions()">
+          <mat-icon class="retry-icon">refresh</mat-icon>
+          Reintentar
+        </button>
+      }
+    </div>
+  }
+
+  <div class="table-toolbar">
+    <app-button variant="primary" icon="add" (click)="onCreate()">Nueva copa</app-button>
+  </div>
+
+  <app-table
+    [columns]="columns"
+    [data]="competitions()"
+    [loading]="loading()"
+    [clickableRows]="true"
+    (rowClick)="onRowClick($event)"
+    minWidth="760px"
+    emptyMessage="No hay competencias registradas"
+  >
+    <ng-template tableCell="competitionImg" let-row>
+      <div class="thumb">
+        <mat-icon>emoji_events</mat-icon>
+        <img [src]="row.competitionImg" alt="" loading="lazy" (error)="$any($event.target).hidden = true" />
+      </div>
+    </ng-template>
+
+    <ng-template tableCell="name" let-row>
+      <span class="competition-name">{{ row.name }}</span>
+    </ng-template>
+
+    <ng-template tableCell="sport.name" let-row>
+      <span [class.muted-cell]="!row.sport.name">{{ row.sport.name ?? '—' }}</span>
+    </ng-template>
+
+    <ng-template tableCell="status" let-row>
+      <app-pill [variant]="status[row.status].variant" [dot]="true">
+        {{ status[row.status].label }}
+      </app-pill>
+    </ng-template>
+
+    <ng-template tableCell="actions" let-row>
+      <div class="actions-group">
+        <button
+          mat-icon-button
+          class="action-btn edit-btn"
+          type="button"
+          (click)="onRowClick(row)"
+          title="Abrir copa"
+          aria-label="Abrir copa"
+        >
+          <mat-icon>open_in_new</mat-icon>
+        </button>
+        @if (row.status === 'DRAFT') {
+          <button
+            mat-icon-button
+            class="action-btn delete-btn"
+            type="button"
+            (click)="onDelete(row)"
+            title="Eliminar copa"
+            aria-label="Eliminar copa"
+          >
+            <mat-icon>delete</mat-icon>
+          </button>
+        }
+      </div>
+    </ng-template>
+  </app-table>
+</div>

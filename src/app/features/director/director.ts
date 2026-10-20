@@ -1,18 +1,20 @@
 import { Component, inject } from '@angular/core'
 import { MsalService } from '@azure/msal-angular'
 import { RouterOutlet } from '@angular/router'
-import { environment } from '../../../environments/environment'
 import { SidebarComponent, type MenuItem } from '../../shared/components/sidebar/sidebar'
+import { TopbarComponent } from '../../shared/components/topbar/topbar'
+import { SessionService } from '../../shared/services/session.service'
 
 @Component({
   selector: 'app-director',
   standalone: true,
-  imports: [SidebarComponent, RouterOutlet],
+  imports: [SidebarComponent, TopbarComponent, RouterOutlet],
   templateUrl: './director.html',
   styleUrl: './director.scss',
 })
 export class DirectorComponent {
   private readonly authService = inject(MsalService, { optional: true })
+  private readonly session = inject(SessionService)
 
   protected readonly accountName =
     this.authService?.instance.getActiveAccount()?.name ?? 'Director'
@@ -22,18 +24,13 @@ export class DirectorComponent {
   protected readonly directorMenuItems: MenuItem[] = [
     { label: 'Panel de Control', icon: 'dashboard', route: '/director' },
     { label: 'Eventos', icon: 'analytics', route: '/director/events' },
+    { label: 'Competencias', icon: 'emoji_events', route: '/director/competitions' },
     { label: 'Estadísticas', icon: 'analytics', route: '/director/stats' },
     { label: 'Aprobaciones', icon: 'fact_check', route: '/director/approvals' },
   ]
 
+  /** El cierre de sesión vive en SessionService: es el mismo para los dos shells. */
   logout(): void {
-    // Guardar referencia antes de limpiar, para que MSAL sepa qué sesión cerrar
-    const account = this.authService?.instance.getActiveAccount()
-    // Limpiar cuenta activa para evitar estado residual en LocalStorage
-    this.authService?.instance.setActiveAccount(null)
-    this.authService?.logoutRedirect({
-      postLogoutRedirectUri: environment.redirectUri,
-      account: account ?? undefined,
-    }).subscribe()
+    this.session.logout()
   }
 }

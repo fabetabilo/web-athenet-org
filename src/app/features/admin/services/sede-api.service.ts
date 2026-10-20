@@ -1,13 +1,12 @@
 import { Injectable, inject } from '@angular/core';
-import { HttpClient, HttpHeaders, HttpParams } from '@angular/common/http';
-import { Observable, switchMap } from 'rxjs';
+import { HttpClient, HttpParams } from '@angular/common/http';
+import { Observable, map } from 'rxjs';
 import { MsalService } from '@azure/msal-angular';
-import { environment } from '../../../../environments/environment';
-import { loginRequest } from '../../../../auth/loginRequest';
+import { bffAdminUrl, withBffToken, type AdminCampus, type AdminCampusWrite } from './admin-bff';
 
 /**
- * Coincide con SedeResponse del backend (record de Java). institucionNombre
- * viene resuelto por el backend para no tener que pedir la institución aparte.
+ * Modelo de las vistas; el BFF lo entrega en inglés (`AdminCampus`).
+ * institucionNombre viene resuelto para no tener que pedir la institución aparte.
  */
 export interface Sede {
   id: number;
@@ -24,72 +23,65 @@ export interface Sede {
  */
 export type SedeInput = Omit<Sede, 'id' | 'institucionNombre'>;
 
+function toSede(dto: AdminCampus): Sede {
+  return {
+    id: dto.id,
+    nombre: dto.name,
+    ciudad: dto.city,
+    direccion: dto.address,
+    institucionId: dto.institutionId,
+    institucionNombre: dto.institutionName,
+  };
+}
+
+function toCampusWrite(data: SedeInput): AdminCampusWrite {
+  return {
+    name: data.nombre,
+    city: data.ciudad,
+    address: data.direccion,
+    institutionId: data.institucionId,
+  };
+}
+
+/** CRUD de sedes en el BFF (`/api/admin/campuses`); todo exige el rol `admin`. */
 @Injectable({ providedIn: 'root' })
 export class SedeApiService {
   private readonly http = inject(HttpClient);
-  private readonly authService = inject(MsalService, { optional: true });
-  private readonly baseUrl = (environment.apiUrl ?? 'http://localhost:8080').replace(/\/+$/, '');
+  private readonly msal = inject(MsalService, { optional: true });
+  private readonly baseUrl = `${bffAdminUrl()}/campuses`;
 
-  /**
-   * GET /api/v1/sedes — pública. Si se pasa institucionId, filtra por esa
-   * institución (usa el mismo endpoint con query param, como hace el backend).
-   */
+  /** Si se pasa institucionId, filtra por esa institución (`?institutionId=` en el BFF). */
   getSedes(institucionId?: number): Observable<Sede[]> {
     let params = new HttpParams();
     if (institucionId != null) {
-      params = params.set('institucionId', institucionId);
+      params = params.set('institutionId', institucionId);
     }
-    return this.http.get<Sede[]>(`${this.baseUrl}/api/v1/sedes`, { params });
+    return withBffToken(this.msal, (headers) =>
+      this.http.get<AdminCampus[]>(this.baseUrl, { headers, params }),
+    ).pipe(map((list) => list.map(toSede)));
   }
 
   getSede(id: number): Observable<Sede> {
-    return this.http.get<Sede>(`${this.baseUrl}/api/v1/sedes/${id}`);
+    return withBffToken(this.msal, (headers) =>
+      this.http.get<AdminCampus>(`${this.baseUrl}/${id}`, { headers }),
+    ).pipe(map(toSede));
   }
 
-  /**
-   * POST /api/v1/sedes — protegida, exige rol `admin`.
-   */
   crearSede(data: SedeInput): Observable<Sede> {
-    return this.conToken((headers) =>
-      this.http.post<Sede>(`${this.baseUrl}/api/v1/sedes`, data, { headers }),
-    );
+    return withBffToken(this.msal, (headers) =>
+      this.http.post<AdminCampus>(this.baseUrl, toCampusWrite(data), { headers }),
+    ).pipe(map(toSede));
   }
 
   actualizarSede(id: number, data: SedeInput): Observable<Sede> {
-    return this.conToken((headers) =>
-      this.http.put<Sede>(`${this.baseUrl}/api/v1/sedes/${id}`, data, { headers }),
-    );
+    return withBffToken(this.msal, (headers) =>
+      this.http.put<AdminCampus>(`${this.baseUrl}/${id}`, toCampusWrite(data), { headers }),
+    ).pipe(map(toSede));
   }
 
   eliminarSede(id: number): Observable<void> {
-    return this.conToken((headers) =>
-      this.http.delete<void>(`${this.baseUrl}/api/v1/sedes/${id}`, { headers }),
+    return withBffToken(this.msal, (headers) =>
+      this.http.delete<void>(`${this.baseUrl}/${id}`, { headers }),
     );
-  }
-
-  /**
-   * Helper compartido: mismo patrón que InstitucionApiService.conToken().
-   */
-  private conToken<T>(request: (headers: HttpHeaders) => Observable<T>): Observable<T> {
-    const account =
-      this.authService?.instance.getActiveAccount() ??
-      this.authService?.instance.getAllAccounts()[0];
-
-    if (this.authService && account) {
-      if (!this.authService.instance.getActiveAccount()) {
-        this.authService.instance.setActiveAccount(account);
-      }
-
-      return this.authService.acquireTokenSilent({ ...loginRequest, account }).pipe(
-        switchMap((tokenResult) => {
-          const headers = new HttpHeaders({
-            Authorization: `Bearer ${tokenResult.idToken}`,
-          });
-          return request(headers);
-        }),
-      );
-    }
-
-    return request(new HttpHeaders());
   }
 }

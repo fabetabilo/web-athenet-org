@@ -5,6 +5,7 @@ import {
   TableComponent,
   TableCellDirective,
   TableColumn,
+  EMPTY_FILTER_VALUE,
   getDeepValue,
   normalizeFilterText,
 } from './table';
@@ -15,6 +16,8 @@ interface TestItem {
   category: { id: string; name: string };
   isOfficial: boolean;
   score: number;
+  /** Celda multivalor, como los roles de un usuario */
+  tags: string[];
 }
 
 @Component({
@@ -69,6 +72,7 @@ class HostTableComponent {
         { label: 'Comunitario', value: false },
       ],
     },
+    { key: 'tags', header: 'Tags', filterable: true, filterType: 'select' },
     { key: 'customCell', header: 'Personalizado' },
   ];
 
@@ -89,6 +93,7 @@ describe('TableComponent', () => {
       category: { id: 'c1', name: 'Deportes' },
       isOfficial: true,
       score: 10,
+      tags: ['admin', 'director'],
     },
     {
       id: 'EVT-2',
@@ -96,6 +101,7 @@ describe('TableComponent', () => {
       category: { id: 'c2', name: 'Ciencia' },
       isOfficial: false,
       score: 25,
+      tags: ['director'],
     },
     {
       id: 'EVT-3',
@@ -103,6 +109,7 @@ describe('TableComponent', () => {
       category: { id: 'c1', name: 'Deportes' },
       isOfficial: false,
       score: 15,
+      tags: [],
     },
   ];
 
@@ -249,6 +256,35 @@ describe('TableComponent', () => {
       fixture.detectChanges();
 
       expect(tableComponent['dataSource'].filteredData.length).toBe(3);
+    });
+
+    it('debe filtrar celdas multivalor cuando al menos un elemento coincide', () => {
+      // 'director' lo tienen EVT-1 (junto a 'admin') y EVT-2
+      tableComponent.applyColumnFilter('tags', 'director');
+      fixture.detectChanges();
+
+      expect(tableComponent['dataSource'].filteredData.length).toBe(2);
+      expect(tableComponent['dataSource'].filteredData.map(d => d.id)).toEqual(['EVT-1', 'EVT-2']);
+    });
+
+    it('debe seleccionar las filas sin valor con la sentinela EMPTY_FILTER_VALUE', () => {
+      tableComponent.applyColumnFilter('tags', EMPTY_FILTER_VALUE);
+      fixture.detectChanges();
+
+      expect(tableComponent.isFilterActive('tags')).toBe(true);
+      expect(tableComponent['dataSource'].filteredData.length).toBe(1);
+      expect(tableComponent['dataSource'].filteredData[0].id).toBe('EVT-3');
+    });
+
+    it('debe derivar las opciones de un select aplanando las celdas multivalor', () => {
+      const opciones = tableComponent.getSelectOptions({
+        key: 'tags',
+        header: 'Tags',
+        filterable: true,
+        filterType: 'select',
+      });
+
+      expect(opciones.map(o => o.value)).toEqual(['admin', 'director']);
     });
 
     it('debe permitir limpiar filtros por columna de forma individual', () => {

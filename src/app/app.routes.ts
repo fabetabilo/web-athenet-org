@@ -6,10 +6,17 @@ import { InstitucionesComponent } from './features/admin/instituciones/instituci
 import { SedesComponent } from './features/admin/sedes/sedes'
 import { DeportesComponent } from './features/admin/deportes/deportes'
 import { EquiposComponent } from './features/admin/equipos/equipos'
+import { UsersComponent } from './features/admin/users/users'
 import { DirectorComponent } from './features/director/director'
 import { DirectorHomeComponent } from './features/director/home/home'
 import { DirectorEventsComponent } from './features/director/events/events'
 import { EventDetailComponent } from './features/director/events/event-detail/event-detail'
+import { DirectorCompetitionsComponent } from './features/director/competitions/competitions'
+import { CompetitionDetailComponent } from './features/director/competitions/competition-detail/competition-detail'
+import { DelegateComponent } from './features/delegate/delegate'
+import { DelegateHomeComponent } from './features/delegate/home/home'
+import { DelegateEventsComponent } from './features/delegate/events/events'
+import { MatchBoardComponent } from './features/delegate/events/match-board/match-board'
 import { UnauthorizedComponent } from './shared/unauthorized/unauthorized'
 import { RoleGuard } from '../auth/guards/role.guard'
 
@@ -29,6 +36,7 @@ export const routes: Routes = [
       { path: 'sedes', component: SedesComponent },
       { path: 'deportes', component: DeportesComponent },
       { path: 'equipos', component: EquiposComponent },
+      { path: 'users', component: UsersComponent },
     ]
   },
 
@@ -42,6 +50,21 @@ export const routes: Routes = [
       { path: '', component: DirectorHomeComponent },
       { path: 'events', component: DirectorEventsComponent },
       { path: 'events/:internalId', component: EventDetailComponent },
+      { path: 'competitions', component: DirectorCompetitionsComponent },
+      { path: 'competitions/:id', component: CompetitionDetailComponent },
+    ]
+  },
+
+  // Rol Delegado
+  {
+    path: 'delegate',
+    component: DelegateComponent,
+    canActivate: [RoleGuard],
+    data: { roles: ['delegate'] },
+    children: [
+      { path: '', component: DelegateHomeComponent },
+      { path: 'events', component: DelegateEventsComponent },
+      { path: 'events/:id', component: MatchBoardComponent },
     ]
   },
 

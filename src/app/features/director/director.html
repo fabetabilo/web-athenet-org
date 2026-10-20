@@ -1,12 +1,18 @@
 <div class="layout-wrapper">
-  <app-sidebar
-    [menuItems]="directorMenuItems"
+  <app-topbar
     [accountName]="accountName"
     [userRole]="userRole"
     (logoutClick)="logout()">
-  </app-sidebar>
+  </app-topbar>
 
-  <div class="dashboard-content">
-    <router-outlet></router-outlet>
+  <div class="layout-body">
+    <app-sidebar
+      [menuItems]="directorMenuItems"
+      (logoutClick)="logout()">
+    </app-sidebar>
+
+    <div class="dashboard-content">
+      <router-outlet></router-outlet>
+    </div>
   </div>
 </div>

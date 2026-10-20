@@ -1,0 +1,180 @@
+<div class="board-page">
+  <button type="button" class="back-btn" (click)="onBack()" aria-label="Volver a Mis eventos">
+    <mat-icon>arrow_back</mat-icon>
+    <span>Mis eventos</span>
+  </button>
+
+  @if (loading()) {
+    <div class="page-loading">
+      <div class="loading-spinner"></div>
+      <span>Cargando encuentro…</span>
+    </div>
+  }
+
+  @if (error() && !loading()) {
+    <div class="error-banner">
+      <div class="error-content">
+        <mat-icon>error_outline</mat-icon>
+        <span>{{ error() }}</span>
+      </div>
+      @if (canRetry()) {
+        <button type="button" class="retry-btn" (click)="loadMatch()">
+          <mat-icon>refresh</mat-icon>
+          Reintentar
+        </button>
+      }
+    </div>
+  }
+
+  @if (notFound() && !loading()) {
+    <div class="state-box">
+      <mat-icon>search_off</mat-icon>
+      <p class="state-title">Partido no encontrado o no está asignado a ti</p>
+      <app-button variant="secondary" icon="arrow_back" (btnClick)="onBack()">Volver a Mis eventos</app-button>
+    </div>
+  }
+
+  @if (match(); as m) {
+    <header class="board-header">
+      <div class="competition-img">
+        <mat-icon>emoji_events</mat-icon>
+        @if (m.competition.competitionImg) {
+          <img [src]="m.competition.competitionImg" alt="" (error)="$any($event.target).hidden = true" />
+        }
+      </div>
+      <div class="board-info">
+        <app-pill [variant]="status[m.status].variant" [dot]="true" size="md">{{ status[m.status].label }}</app-pill>
+        <h1 class="board-title">{{ m.competition.name ?? 'Competencia' }}</h1>
+        <span class="board-round">{{ m.roundLabel }}</span>
+        <div class="board-meta">
+          <span>
+            <mat-icon>event</mat-icon>
+            @if (m.date) {
+              {{ m.date | date: 'dd/MM/yyyy' }} {{ m.time ?? '' }}
+            } @else {
+              <span class="muted">Sin fecha</span>
+            }
+          </span>
+          <span>
+            <mat-icon>location_on</mat-icon>
+            @if (m.location) {
+              {{ m.location }}
+            } @else {
+              <span class="muted">Sin lugar</span>
+            }
+          </span>
+          @if (m.address) {
+            <span><mat-icon>map</mat-icon>{{ m.address }}</span>
+          }
+        </div>
+      </div>
+    </header>
+
+    <section class="scoreboard" [class.is-editable]="editable()" aria-label="Marcador">
+      <ng-container
+        *ngTemplateOutlet="sideTpl; context: { $implicit: m.homeTeam, side: 'home', score: home(), label: 'Local', started: m.status !== 'SCHEDULED' }" />
+      <span class="score-separator" aria-hidden="true">–</span>
+      <ng-container
+        *ngTemplateOutlet="sideTpl; context: { $implicit: m.awayTeam, side: 'away', score: away(), label: 'Visita', started: m.status !== 'SCHEDULED' }" />
+    </section>
+
+    <div class="board-panel">
+      @switch (m.status) {
+        @case ('SCHEDULED') {
+          @if (missing().length) {
+            <p class="board-note warn">
+              <mat-icon>info_outline</mat-icon>
+              Falta {{ missing().join(', ') }} para iniciar. Lo define el director.
+            </p>
+          } @else {
+            <p class="board-note">
+              <mat-icon>info_outline</mat-icon>
+              Puedes iniciarlo antes de la hora programada. Una vez iniciado no se puede volver atrás.
+            </p>
+          }
+          <div class="board-actions">
+            <app-button variant="primary" size="lg" icon="play_arrow"
+                        [disabled]="missing().length > 0" [loading]="busy()" (btnClick)="onStart()">
+              Iniciar encuentro
+            </app-button>
+          </div>
+        }
+        @case ('IN_PROGRESS') {
+          <p class="board-note">
+            <mat-icon>save</mat-icon>
+            El marcador se guarda en este dispositivo hasta finalizar.
+          </p>
+          @if (tied()) {
+            <p class="board-note warn">
+              <mat-icon>balance</mat-icon>
+              No se admiten empates: el encuentro debe tener un ganador.
+            </p>
+          }
+          <div class="board-actions">
+            <app-button variant="primary" size="lg" icon="sports_score"
+                        [disabled]="tied()" [loading]="busy()" (btnClick)="onFinish()">
+              Finalizar encuentro
+            </app-button>
+          </div>
+        }
+        @case ('FINISHED') {
+          @if (correcting()) {
+            <p class="board-note warn">
+              <mat-icon>warning_amber</mat-icon>
+              Si cambia el ganador y el partido siguiente ya comenzó, no se podrá guardar.
+            </p>
+            @if (tied()) {
+              <p class="board-note warn">
+                <mat-icon>balance</mat-icon>
+                No se admiten empates: el encuentro debe tener un ganador.
+              </p>
+            }
+            <div class="board-actions">
+              <app-button variant="secondary" [disabled]="busy()" (btnClick)="onCancelCorrection()">Cancelar</app-button>
+              <app-button variant="primary" icon="save"
+                          [disabled]="tied() || unchanged()" [loading]="busy()" (btnClick)="onSaveCorrection()">
+                Guardar corrección
+              </app-button>
+            </div>
+          } @else {
+            <p class="board-note">
+              <mat-icon>check_circle_outline</mat-icon>
+              Resultado final registrado.
+            </p>
+            <div class="board-actions">
+              <app-button variant="secondary" icon="edit" (btnClick)="onCorrect()">Corregir resultado</app-button>
+            </div>
+          }
+        }
+      }
+    </div>
+  }
+</div>
+
+<ng-template #sideTpl let-team let-side="side" let-score="score" let-label="label" let-started="started">
+  <div class="team-side">
+    <span class="side-label">{{ label }}</span>
+    <div class="team-logo">
+      <mat-icon>shield</mat-icon>
+      @if (team?.logoUrl) {
+        <img [src]="team.logoUrl" alt="" (error)="$any($event.target).hidden = true" />
+      }
+    </div>
+    <span class="team-name" [class.muted]="!team">{{ teamName(team) }}</span>
+    <span class="score-value" [class.pending]="!started" aria-live="polite">{{ started ? score : '–' }}</span>
+    @if (editable()) {
+      <div class="score-controls">
+        <button type="button" class="score-btn"
+                [disabled]="score === 0 || busy()" (click)="change(side, -1)"
+                [attr.aria-label]="'Restar gol a ' + teamName(team)">
+          <mat-icon>remove</mat-icon>
+        </button>
+        <button type="button" class="score-btn plus"
+                [disabled]="busy()" (click)="change(side, 1)"
+                [attr.aria-label]="'Sumar gol a ' + teamName(team)">
+          <mat-icon>add</mat-icon>
+        </button>
+      </div>
+    }
+  </div>
+</ng-template>

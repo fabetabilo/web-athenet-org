@@ -1,0 +1,47 @@
+<div class="team-picker">
+  <span class="team-picker-label">{{ label() }}</span>
+
+  <div class="team-picker-grid">
+    <mat-form-field appearance="outline">
+      <mat-label>Institución</mat-label>
+      <mat-select [formControl]="institution()" (selectionChange)="onInstitutionSelected()">
+        @for (opt of institutionOptions(); track opt.id) {
+          <mat-option [value]="opt.id">{{ opt.name ?? 'Institución eliminada' }}</mat-option>
+        }
+      </mat-select>
+      @if (institutionHint(); as text) {
+        <mat-hint>{{ text }}</mat-hint>
+      }
+      <mat-error>{{ errorMessage(institution()) }}</mat-error>
+    </mat-form-field>
+
+    <mat-form-field appearance="outline">
+      <mat-label>Sede</mat-label>
+      <mat-select [formControl]="campus()" (selectionChange)="onCampusSelected()">
+        @for (opt of campusOptions(); track opt.id) {
+          <mat-option [value]="opt.id">{{ opt.name ?? 'Sede eliminada' }}</mat-option>
+        }
+      </mat-select>
+      @if (campusHint(); as text) {
+        <mat-hint>{{ text }}</mat-hint>
+      }
+      <mat-error>{{ errorMessage(campus()) }}</mat-error>
+    </mat-form-field>
+
+    <mat-form-field appearance="outline">
+      <mat-label>{{ isMatchup() ? 'Equipo' : 'Equipo (opcional)' }}</mat-label>
+      <mat-select [formControl]="team()">
+        @if (!isMatchup()) {
+          <mat-option [value]="null">Sin equipo</mat-option>
+        }
+        @for (opt of teamOptions(); track opt.id) {
+          <mat-option [value]="opt.id">{{ opt.name ?? 'Equipo eliminado' }}</mat-option>
+        }
+      </mat-select>
+      @if (teamHint(); as text) {
+        <mat-hint>{{ text }}</mat-hint>
+      }
+      <mat-error>{{ errorMessage(team()) }}</mat-error>
+    </mat-form-field>
+  </div>
+</div>

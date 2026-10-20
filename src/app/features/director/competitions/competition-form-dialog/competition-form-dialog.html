@@ -1,0 +1,117 @@
+<div class="dialog-shell">
+  <div class="dialog-header">
+    <div class="dialog-icon-wrapper">
+      <mat-icon>{{ isEdit ? 'edit' : 'emoji_events' }}</mat-icon>
+    </div>
+    <div class="dialog-header-text">
+      <h2 class="dialog-title">{{ isEdit ? 'Editar copa' : 'Nueva copa' }}</h2>
+      <p class="dialog-subtitle">Copa de 16 equipos: octavos, cuartos, semifinal y final.</p>
+    </div>
+  </div>
+
+  <form class="dialog-body" [formGroup]="form" (ngSubmit)="onSubmit()" autocomplete="off">
+    <div class="form-row">
+      <mat-form-field appearance="outline">
+        <mat-label>Nombre</mat-label>
+        <input matInput formControlName="name" placeholder="Copa Instituciones de Chile 2026" />
+        <mat-error>{{ fieldError('name') }}</mat-error>
+      </mat-form-field>
+    </div>
+
+    <div class="form-row two-col">
+      <mat-form-field appearance="outline">
+        <mat-label>Deporte</mat-label>
+        <mat-select formControlName="sportId">
+          @for (opt of sportOptions(); track opt.id) {
+            <mat-option [value]="opt.id">{{ opt.name ?? 'Deporte eliminado' }}</mat-option>
+          }
+        </mat-select>
+        @if (sportLocked) {
+          <mat-hint>No se puede cambiar con equipos inscritos.</mat-hint>
+        } @else if (sportsError()) {
+          <mat-hint>No se pudo cargar la lista de deportes.</mat-hint>
+        }
+        <mat-error>{{ fieldError('sportId') }}</mat-error>
+      </mat-form-field>
+
+      <mat-form-field appearance="outline">
+        <mat-label>Temporada</mat-label>
+        <input matInput formControlName="season" placeholder="2026" />
+        <mat-error>{{ fieldError('season') }}</mat-error>
+      </mat-form-field>
+    </div>
+
+    <div class="form-row">
+      <mat-form-field appearance="outline">
+        <mat-label>Descripción (opcional)</mat-label>
+        <textarea matInput formControlName="description" rows="2"></textarea>
+      </mat-form-field>
+    </div>
+
+    <div class="form-row two-col">
+      <mat-form-field appearance="outline">
+        <mat-label>Fecha de inicio (opcional)</mat-label>
+        <input
+          matInput
+          [matDatepicker]="startPicker"
+          formControlName="startDate"
+          (dateChange)="onStartDateChange()"
+        />
+        <mat-datepicker-toggle matIconSuffix [for]="startPicker" />
+        <mat-datepicker #startPicker />
+        <mat-error>{{ fieldError('startDate') }}</mat-error>
+      </mat-form-field>
+
+      <mat-form-field appearance="outline">
+        <mat-label>Fecha de término (opcional)</mat-label>
+        <input matInput [matDatepicker]="endPicker" formControlName="endDate" />
+        <mat-datepicker-toggle matIconSuffix [for]="endPicker" />
+        <mat-datepicker #endPicker />
+        <mat-error>{{ fieldError('endDate') }}</mat-error>
+      </mat-form-field>
+    </div>
+
+    <div class="form-row image-row">
+      <mat-form-field appearance="outline">
+        <mat-label>URL de la imagen</mat-label>
+        <mat-icon matPrefix>image</mat-icon>
+        <input matInput formControlName="competitionImg" placeholder="https://…" />
+        <mat-error>{{ fieldError('competitionImg') }}</mat-error>
+      </mat-form-field>
+
+      <div class="image-preview">
+        @if (imgUrl()) {
+          <img
+            [src]="imgUrl()"
+            alt="Vista previa"
+            [hidden]="imgBroken()"
+            (load)="imgBroken.set(false)"
+            (error)="imgBroken.set(true)"
+          />
+        }
+        @if (!imgUrl() || imgBroken()) {
+          <mat-icon>{{ imgUrl() ? 'broken_image' : 'emoji_events' }}</mat-icon>
+        }
+      </div>
+    </div>
+
+    @if (error(); as message) {
+      <div class="form-error-banner">
+        <mat-icon>error_outline</mat-icon>
+        <span>{{ message }}</span>
+      </div>
+    }
+  </form>
+
+  <div class="dialog-actions">
+    <app-button variant="secondary" [disabled]="saving()" (btnClick)="onCancel()">Cancelar</app-button>
+    <app-button
+      variant="primary"
+      [icon]="isEdit ? 'save' : 'add'"
+      [loading]="saving()"
+      (btnClick)="onSubmit()"
+    >
+      {{ isEdit ? 'Guardar cambios' : 'Crear copa' }}
+    </app-button>
+  </div>
+</div>

@@ -9,16 +9,12 @@ import {
   TableCellDirective,
   type TableColumn,
 } from '../../../shared/components/table/table';
-import {
-  PillComponent,
-  type PillVariant,
-} from '../../../shared/components/pill/pill';
+import { PillComponent } from '../../../shared/components/pill/pill';
 import { ButtonComponent } from '../../../shared/components/button/button';
 import { ConfirmDialogComponent } from '../../../shared/components/confirm-dialog/confirm-dialog';
-import {
-  DirectorApiService,
-  type AthenetEvent,
-} from '../services/director-api.service';
+import { DirectorApiService } from '../services/director-api.service';
+import { bffErrorMessage, type DirectorEvent } from '../services/bff';
+import { EVENT_STATUS, STATUS_OPTIONS } from './event-status';
 
 @Component({
   selector: 'app-director-events',
@@ -41,7 +37,7 @@ export class DirectorEventsComponent implements OnInit {
   private readonly dialog = inject(MatDialog);
   private readonly router = inject(Router);
 
-  protected readonly columns: TableColumn<AthenetEvent>[] = [
+  protected readonly columns: TableColumn<DirectorEvent>[] = [
     {
       key: 'internalId',
       header: 'ID',
@@ -56,30 +52,19 @@ export class DirectorEventsComponent implements OnInit {
       filterType: 'text',
     },
     {
-      key: 'category',
-      header: 'Categoría',
+      // Deportes del catálogo del admin: las opciones del filtro las deduce la tabla.
+      key: 'sport.name',
+      header: 'Deporte',
       sortable: true,
       filterable: true,
       filterType: 'select',
-      filterOptions: [
-        { label: 'Tenis de Mesa', value: 'TENIS_MESA' },
-        { label: 'Fútbol', value: 'FUTBOL' },
-        { label: 'Vóleibol', value: 'VOLEIBOL' },
-        { label: 'Ajedrez', value: 'AJEDREZ' },
-        { label: 'Natación', value: 'NATACION' },
-        { label: 'Básquetbol', value: 'BASQUETBOL' },
-        { label: 'Atletismo', value: 'ATLETISMO' },
-        { label: 'Tenis', value: 'TENIS' },
-        { label: 'Rugby', value: 'RUGBY' },
-        { label: 'Levantamiento de Pesas', value: 'LEVANTAMIENTO_PESAS' },
-      ],
       width: '160px',
     },
     {
       key: 'eventDate',
       header: 'Fecha',
       sortable: true,
-      width: '130px',
+      width: '170px',
     },
     {
       key: 'status',
@@ -87,11 +72,7 @@ export class DirectorEventsComponent implements OnInit {
       sortable: true,
       filterable: true,
       filterType: 'select',
-      filterOptions: [
-        { label: 'Publicado', value: 'PUBLISHED' },
-        { label: 'Borrador', value: 'DRAFT' },
-        { label: 'Cancelado', value: 'CANCELLED' },
-      ],
+      filterOptions: STATUS_OPTIONS,
       width: '140px',
     },
     {
@@ -124,7 +105,7 @@ export class DirectorEventsComponent implements OnInit {
   ];
 
   // Estado reactivo para la tabla alimentada desde la API
-  protected readonly events = signal<AthenetEvent[]>([]);
+  protected readonly events = signal<DirectorEvent[]>([]);
   protected readonly loading = signal<boolean>(true);
   protected readonly error = signal<string | null>(null);
 
@@ -136,7 +117,7 @@ export class DirectorEventsComponent implements OnInit {
     this.loading.set(true);
     this.error.set(null);
 
-    this.directorApi.getAllAdminEvents().subscribe({
+    this.directorApi.getEvents().subscribe({
       next: (data) => {
         this.events.set(data);
         this.loading.set(false);
@@ -144,7 +125,10 @@ export class DirectorEventsComponent implements OnInit {
       error: (err) => {
         console.error('Error al obtener eventos desde DirectorApiService:', err);
         this.error.set(
-          'No se pudo conectar con el servidor para obtener los eventos. Verifica que el backend esté en ejecución.',
+          bffErrorMessage(
+            err,
+            'No se pudo conectar con el servidor para obtener los eventos. Verifica que el backend esté en ejecución.',
+          ),
         );
         this.loading.set(false);
         this.events.set([]);
@@ -152,55 +136,19 @@ export class DirectorEventsComponent implements OnInit {
     });
   }
 
-  getCategoryLabel(category: string): string {
-    const map: Record<string, string> = {
-      TENIS_MESA: 'Tenis de Mesa',
-      FUTBOL: 'Fútbol',
-      VOLEIBOL: 'Vóleibol',
-      AJEDREZ: 'Ajedrez',
-      NATACION: 'Natación',
-      BASQUETBOL: 'Básquetbol',
-      ATLETISMO: 'Atletismo',
-      TENIS: 'Tenis',
-      RUGBY: 'Rugby',
-      LEVANTAMIENTO_PESAS: 'Levantamiento de Pesas',
-    };
-    return map[category] ?? category;
-  }
+  protected readonly status = EVENT_STATUS;
 
-  getStatusLabel(status: string): string {
-    const map: Record<string, string> = {
-      PUBLISHED: 'Publicado',
-      DRAFT: 'Borrador',
-      CANCELLED: 'Cancelado',
-    };
-    return map[status] ?? status;
-  }
-
-  getStatusVariant(status: string): PillVariant {
-    switch (status) {
-      case 'PUBLISHED':
-        return 'success';
-      case 'DRAFT':
-        return 'warning';
-      case 'CANCELLED':
-        return 'danger';
-      default:
-        return 'neutral';
-    }
-  }
-
-  onRowClick(event: AthenetEvent): void {
+  onRowClick(event: DirectorEvent): void {
     this.router.navigate(['/director/events', event.internalId]);
   }
 
-  onEdit(event: AthenetEvent): void {
+  onEdit(event: DirectorEvent): void {
     this.router.navigate(['/director/events', event.internalId], {
       queryParams: { mode: 'edit' },
     });
   }
 
-  onDelete(event: AthenetEvent): void {
+  onDelete(event: DirectorEvent): void {
     const dialogRef = this.dialog.open(ConfirmDialogComponent, {
       data: {
         title: 'Confirmación de Eliminación',
@@ -222,17 +170,16 @@ export class DirectorEventsComponent implements OnInit {
     dialogRef.afterClosed().subscribe((confirmed: boolean) => {
       if (!confirmed) return;
 
-      const eventId = event.id ?? event.internalId;
       this.loading.set(true);
-      this.directorApi.deleteEvent(eventId).subscribe({
+      this.directorApi.deleteEvent(event.internalId).subscribe({
         next: () => {
-          this.events.update((prev) => prev.filter((e) => (e.id ?? e.internalId) !== eventId));
+          this.events.update((prev) => prev.filter((e) => e.internalId !== event.internalId));
           this.loading.set(false);
         },
         error: (err) => {
           console.error('Error al eliminar evento:', err);
           this.error.set(
-            `No se pudo eliminar el evento "${event.title}". Por favor, intenta nuevamente.`,
+            bffErrorMessage(err, `No se pudo eliminar el evento "${event.title}". Por favor, intenta nuevamente.`),
           );
           this.loading.set(false);
         },
