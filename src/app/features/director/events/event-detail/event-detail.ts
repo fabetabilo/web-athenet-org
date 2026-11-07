@@ -48,7 +48,7 @@ import {
   type SportRef,
   type TeamRef,
 } from '../../services/bff';
-import { EDITABLE_STATUS_OPTIONS, EVENT_STATUS } from '../event-status';
+import { EVENT_STATUS, STATUS_OPTIONS } from '../event-status';
 import { controlErrorMessage } from './control-error';
 import {
   TeamPickerComponent,
@@ -129,7 +129,7 @@ export class EventDetailComponent implements OnInit {
   private readonly teamOneSelected = signal<TeamRef | null>(null);
   private readonly teamTwoSelected = signal<TeamRef | null>(null);
 
-  protected readonly statusOptions = EDITABLE_STATUS_OPTIONS;
+  protected readonly statusOptions = STATUS_OPTIONS;
   protected readonly status = EVENT_STATUS;
   protected readonly fieldError = (name: string) => controlErrorMessage(this.form.get(name));
 
