@@ -1,4 +1,4 @@
-import { Component, OnInit, computed, inject, signal } from '@angular/core';
+import { Component, DestroyRef, OnInit, computed, inject, signal } from '@angular/core';
 import { DatePipe, NgTemplateOutlet } from '@angular/common';
 import { ActivatedRoute, Router } from '@angular/router';
 import { MatIconModule } from '@angular/material/icon';
@@ -13,12 +13,14 @@ import { DelegateApiService } from '../../services/delegate-api.service';
 import { delegateErrorMessage, missingToStart, type DelegateMatch } from '../../services/delegate-bff';
 import { clearScoreDraft, loadScoreDraft, saveScoreDraft } from '../../services/score-draft';
 import { openConfirm, startConfirmData, teamName } from '../match-ui';
+import { LiveScoreSync } from './live-score-sync';
 
 export type ScoreSide = 'home' | 'away';
 
 /**
- * Tablero del encuentro. El marcador solo se envía al finalizar (o al guardar
- * una corrección); mientras está en juego vive en `score-draft`.
+ * Tablero del encuentro. En juego envía cada cambio de marcador en vivo al BFF
+ * (serializado con respaldo en `score-draft`); al finalizar o corregir guarda
+ * el resultado definitivo vía `PUT /result`.
  */
 @Component({
   selector: 'app-match-board',
@@ -33,8 +35,18 @@ export class MatchBoardComponent implements OnInit {
   private readonly api = inject(DelegateApiService);
   private readonly dialog = inject(MatDialog);
   private readonly notification = inject(NotificationService);
+  private readonly destroyRef = inject(DestroyRef);
 
   private readonly id = Number(this.route.snapshot.paramMap.get('id'));
+  private readonly liveSync = new LiveScoreSync(
+    (score) => this.api.setLiveScore(this.id, score),
+    (err) => {
+      console.warn('No se pudo sincronizar el marcador en vivo:', err);
+      this.notification.error(
+        'No se pudo actualizar el marcador en vivo. Se reintentará en el próximo cambio.',
+      );
+    },
+  );
 
   protected readonly match = signal<DelegateMatch | null>(null);
   protected readonly loading = signal(true);
@@ -63,6 +75,7 @@ export class MatchBoardComponent implements OnInit {
   });
 
   ngOnInit(): void {
+    this.destroyRef.onDestroy(() => this.liveSync.destroy());
     this.loadMatch();
   }
 
@@ -97,8 +110,15 @@ export class MatchBoardComponent implements OnInit {
 
     const score = side === 'home' ? this.home : this.away;
     score.set(Math.max(0, score() + delta));
-    // Una corrección se hace en el momento; solo el partido en juego necesita sobrevivir a una recarga.
-    if (!this.correcting()) saveScoreDraft(match.id, { home: this.home(), away: this.away() });
+    // Una corrección se guarda al confirmar; en juego se respalda local y se envía en vivo.
+    if (!this.correcting()) {
+      const homeScore = this.home();
+      const awayScore = this.away();
+      saveScoreDraft(match.id, { home: homeScore, away: awayScore });
+      if (match.status === 'IN_PROGRESS') {
+        this.liveSync.enqueue({ homeScore, awayScore });
+      }
+    }
   }
 
   onStart(): void {
@@ -134,7 +154,11 @@ export class MatchBoardComponent implements OnInit {
       variant: 'warning',
       icon: 'flag',
     }).subscribe((confirmed) => {
-      if (confirmed) this.submitResult(match, 'Encuentro finalizado.', 'No se pudo finalizar el encuentro.');
+      if (!confirmed) return;
+      this.liveSync.cancelPending();
+      this.liveSync.whenIdle(() =>
+        this.submitResult(match, 'Encuentro finalizado.', 'No se pudo finalizar el encuentro.'),
+      );
     });
   }
 
@@ -188,7 +212,13 @@ export class MatchBoardComponent implements OnInit {
 
     if (match.status === 'IN_PROGRESS') {
       const draft = loadScoreDraft(match.id);
-      this.setScore(draft?.home ?? 0, draft?.away ?? 0);
+      const home = draft?.home ?? 0;
+      const away = draft?.away ?? 0;
+      this.setScore(home, away);
+      // Si había borrador al recargar (p. ej. tras un corte), re-sincroniza el último marcador.
+      if (draft && (home > 0 || away > 0)) {
+        this.liveSync.enqueue({ homeScore: home, awayScore: away });
+      }
     } else if (match.status === 'FINISHED') {
       clearScoreDraft(match.id);
       this.setScore(match.homeScore ?? 0, match.awayScore ?? 0);
