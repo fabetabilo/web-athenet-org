@@ -38,6 +38,9 @@ export interface DelegateMatch {
 /** Resultado final o su corrección. No hay empates. */
 export interface ResultWrite { homeScore: number; awayScore: number; }
 
+/** Marcador absoluto en vivo durante un partido en curso (admite empates). */
+export interface LiveScoreWrite { homeScore: number; awayScore: number; }
+
 /**
  * ms-competitions trae en `403` y `404` un `message` listo para mostrar, que
  * `bffErrorMessage` reemplaza por un texto de eventos. El `403` de seguridad

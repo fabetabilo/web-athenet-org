@@ -87,6 +87,15 @@ describe('DelegateApiService', () => {
     req.flush({ ...MATCH, status: 'IN_PROGRESS' });
   });
 
+  it('debe enviar el marcador en vivo con POST /{id}/score y el token de la API', () => {
+    service.setLiveScore(7, { homeScore: 2, awayScore: 1 }).subscribe();
+    const req = httpTesting.expectOne(`${matchesUrl}/7/score`);
+    expect(req.request.method).toBe('POST');
+    expect(req.request.headers.get('Authorization')).toBe('Bearer api-access-token');
+    expect(req.request.body).toEqual({ homeScore: 2, awayScore: 1 });
+    req.flush(null, { status: 202, statusText: 'Accepted' });
+  });
+
   it('debe registrar el resultado con PUT /{id}/result', () => {
     service.registerResult(7, { homeScore: 2, awayScore: 1 }).subscribe();
     const req = httpTesting.expectOne(`${matchesUrl}/7/result`);
