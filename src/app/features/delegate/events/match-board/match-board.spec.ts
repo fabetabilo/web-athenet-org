@@ -32,7 +32,7 @@ describe('MatchBoardComponent', () => {
 
   let fixture: ComponentFixture<MatchBoardComponent>;
   let component: MatchBoardComponent;
-  let apiMock: { getMatch: any; startMatch: any; registerResult: any };
+  let apiMock: { getMatch: any; startMatch: any; setLiveScore: any; registerResult: any };
   let dialogMock: { open: any };
   let notificationMock: { success: any; error: any };
   let routerMock: { navigate: any };
@@ -64,6 +64,7 @@ describe('MatchBoardComponent', () => {
     apiMock = {
       getMatch: vi.fn(),
       startMatch: vi.fn().mockReturnValue(of(IN_PROGRESS)),
+      setLiveScore: vi.fn().mockReturnValue(of(void 0)),
       registerResult: vi.fn(),
     };
     dialogMock = { open: vi.fn().mockReturnValue({ afterClosed: () => of(true) }) };
@@ -206,6 +207,62 @@ describe('MatchBoardComponent', () => {
       expect(loadScoreDraft(7)).toEqual({ home: 0, away: 1 });
       expect(button('Finalizar encuentro')).toBeDefined();
     });
+
+    it('debe enviar el marcador absoluto en vivo al sumar/restar goles (agrupado por debounce)', () => {
+      vi.useFakeTimers();
+      try {
+        setup(IN_PROGRESS);
+        press('Sumar gol a USACH', 2);
+        press('Sumar gol a UCH');
+
+        expect(apiMock.setLiveScore).not.toHaveBeenCalled();
+        vi.advanceTimersByTime(150);
+
+        expect(apiMock.setLiveScore).toHaveBeenCalledTimes(1);
+        expect(apiMock.setLiveScore).toHaveBeenCalledWith(7, { homeScore: 2, awayScore: 1 });
+      } finally {
+        vi.useRealTimers();
+      }
+    });
+
+    it('debe re-sincronizar el borrador al recargar un partido en juego', () => {
+      vi.useFakeTimers();
+      try {
+        saveScoreDraft(7, { home: 3, away: 2 });
+        setup(IN_PROGRESS);
+
+        vi.advanceTimersByTime(150);
+        expect(apiMock.setLiveScore).toHaveBeenCalledWith(7, { homeScore: 3, awayScore: 2 });
+      } finally {
+        vi.useRealTimers();
+      }
+    });
+
+    it('si falla el envío en vivo conserva el marcador local, no bloquea botones y reintenta en el próximo cambio', () => {
+      vi.useFakeTimers();
+      try {
+        apiMock.setLiveScore.mockReturnValueOnce(throwError(() => new HttpErrorResponse({ status: 503 })));
+        setup(IN_PROGRESS);
+
+        press('Sumar gol a USACH');
+        vi.advanceTimersByTime(150);
+
+        expect(scores()).toEqual(['1', '0']);
+        expect(loadScoreDraft(7)).toEqual({ home: 1, away: 0 });
+        expect(scoreButton('Sumar gol a USACH')!.disabled).toBe(false);
+        expect(notificationMock.error).toHaveBeenCalledTimes(1);
+
+        // Siguiente clic vuelve a intentar con el último valor absoluto
+        apiMock.setLiveScore.mockReturnValueOnce(of(void 0));
+        press('Sumar gol a USACH');
+        vi.advanceTimersByTime(150);
+
+        expect(scores()).toEqual(['2', '0']);
+        expect(apiMock.setLiveScore).toHaveBeenLastCalledWith(7, { homeScore: 2, awayScore: 0 });
+      } finally {
+        vi.useRealTimers();
+      }
+    });
   });
 
   describe('finalizado', () => {
@@ -240,6 +297,7 @@ describe('MatchBoardComponent', () => {
       fixture.detectChanges();
 
       expect(apiMock.registerResult).toHaveBeenCalledWith(7, { homeScore: 0, awayScore: 1 });
+      expect(apiMock.setLiveScore).not.toHaveBeenCalled();
       expect(notificationMock.success).toHaveBeenCalledWith('Resultado corregido.');
       expect(scores()).toEqual(['0', '1']);
     });

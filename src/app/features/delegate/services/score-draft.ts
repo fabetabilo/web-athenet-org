@@ -1,7 +1,7 @@
 /**
- * Marcador de un partido en juego. El backend solo guarda el resultado final,
- * así que el marcador en curso vive en este dispositivo: sobrevive a una
- * recarga y al cierre de sesión (que solo borra sus propias claves).
+ * Respaldo local del marcador de un partido en juego. Complementa el envío en
+ * vivo al backend para sobrevivir a una recarga, cortes de red o cierre de
+ * sesión (que solo borra sus propias claves).
  */
 export interface ScoreDraft { home: number; away: number; }
 

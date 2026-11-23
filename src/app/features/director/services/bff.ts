@@ -115,7 +115,7 @@ function isApiError(body: unknown): body is ApiError {
 }
 
 export type EventTypeCode = 'MATCH' | 'MEETING' | 'TRACKDAY' | 'OTHER';
-export type EventStatus = 'DRAFT' | 'PUBLISHED' | 'CANCELLED';
+export type EventStatus = 'DRAFT' | 'PUBLISHED' | 'CANCELLED' | 'FINISHED';
 
 // Dropdowns: arrays planos ordenados por `name`.
 export interface EventTypeOption {

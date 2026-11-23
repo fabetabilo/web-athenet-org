@@ -3,7 +3,7 @@ import { HttpClient } from '@angular/common/http';
 import { Observable, map } from 'rxjs';
 import { MsalService } from '@azure/msal-angular';
 import { withBffToken } from '../../director/services/bff';
-import { bffDelegateUrl, type DelegateMatch, type ResultWrite } from './delegate-bff';
+import { bffDelegateUrl, type DelegateMatch, type LiveScoreWrite, type ResultWrite } from './delegate-bff';
 
 /** "Mis eventos" del delegado en el BFF (`/api/delegate/matches`). */
 @Injectable({ providedIn: 'root' })
@@ -28,6 +28,13 @@ export class DelegateApiService {
   startMatch(id: number): Observable<DelegateMatch> {
     return withBffToken(this.msal, (headers) =>
       this.http.post<DelegateMatch>(`${this.matchesUrl}/${id}/start`, null, { headers }),
+    );
+  }
+
+  /** Envía el marcador absoluto en vivo (POST /{id}/score → 202 sin escribir en BD). */
+  setLiveScore(id: number, body: LiveScoreWrite): Observable<void> {
+    return withBffToken(this.msal, (headers) =>
+      this.http.post<void>(`${this.matchesUrl}/${id}/score`, body, { headers }),
     );
   }
 
